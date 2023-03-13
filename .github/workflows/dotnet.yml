@@ -27,7 +27,7 @@ jobs:
     - name: Build
       run: dotnet build -c Release
     - name: Test
-      run: dotnet test test/SampleDotnet.RepositoryFactory.Tests/SampleDotnet.RepositoryFactory.Tests.csproj --no-build --verbosity normal
+      run: dotnet test test/SampleDotnet.RepositoryFactory.Tests/SampleDotnet.RepositoryFactory.Tests.csproj --no-restore --verbosity normal
 
     - name: publish
       id: SampleDotnet_RepositoryFactory
