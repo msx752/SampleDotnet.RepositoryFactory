@@ -47,68 +47,16 @@ then we call transient scoped DbContext
 ```
 
 # Additional Feature
-- Changes Tracker for each Repository using 'IRepositoryEntryNotifier'
-    - helps to manage entities before SaveChanges such as updating Adding or Updating Time on Entity
-
-# Usage Example of the IRepositoryEntryNotifier
-- we have a User entity which derived from [IHasTimestamps](https://learn.microsoft.com/en-us/ef/core/logging-events-diagnostics/events#example-timestamp-state-changes), when we add a new User or delete a User this event will be triggered by Repository
-
+- If `IHasDateTimeOffset` interfece used on Entity object then value of the the CreatedAt and UpdatedAt properties will be updated automatically.
 ``` c#
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using SampleDotnet.RepositoryFactory.Interfaces;
-
-namespace SampleDotnet.RepositoryFactory.Tests
-{
-    public class UserEntity : IHasTimestamps
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; }
-        public string SurName { get; set; }
-
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
-    }
-
-    public interface IHasTimestamps
-    {
-        DateTime CreatedAt { get; set; }
-        DateTime UpdatedAt { get; set; }
-    }
-
-    public class MyRpositoryNotifier : IRepositoryEntryNotifier
-    {
-        public void RepositoryEntryEvent(object sender, EntityEntryEventArgs e, DbContext dbContext, IServiceProvider serviceProvider)
+        public class TestUserEntity : IHasDateTimeOffset
         {
-            if (e.Entry.State == EntityState.Unchanged || e.Entry.State == EntityState.Detached)
-                return;
+            public Guid Id { get; set; }
+            public string Name { get; set; }
+            public string Surname { get; set; }
 
-            if (e.Entry.Entity is IHasTimestamps entityWithTimestamps)
-            {
-                switch (e.Entry.State)
-                {
-                    case EntityState.Added:
-                        entityWithTimestamps.CreatedAt = DateTime.UtcNow;
-                        break;
-
-                    case EntityState.Modified:
-                        entityWithTimestamps.UpdatedAt = DateTime.UtcNow;
-                        break;
-
-                    case EntityState.Deleted:
-                        //entity deleted on the database
-                        //entityWithTimestamps.DeletedAt = DateTime.UtcNow;
-                        break;
-                }
-            }
+            public DateTimeOffset? CreatedAt { get; set; }
+            public DateTimeOffset? UpdatedAt { get; set; }
         }
-    }
-}
 ```
 
-- ServiceCollection Definition (Singleton scope)
-``` c#
-services.AddSingleton<IRepositoryEntryNotifier, MyRpositoryNotifier>();
-```
-
-- after that call `var repository = _contextFactory.CreateRepository();` and add or delete entity

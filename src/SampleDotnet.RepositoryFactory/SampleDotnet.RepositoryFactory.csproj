@@ -11,7 +11,7 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<id>SampleDotnet.RepositoryFactory</id>
 		<Title>SampleDotnet.RepositoryFactory</Title>
-		<Description>EFCore DbContext RepositoryFactory Pattern</Description>
+		<Description>EFCore DbContextFactory Pattern used on RepositoryFactory</Description>
 		<Summary></Summary>
 		<Authors>Mustafa Salih ASLIM;</Authors>
 		<PackageProjectUrl>https://github.com/msx752/SampleDotnet.RepositoryFactory</PackageProjectUrl>
@@ -30,6 +30,9 @@
 		<PublishRepositoryUrl>True</PublishRepositoryUrl>
 		<ContinuousIntegrationBuild>True</ContinuousIntegrationBuild>
 		<EmbedUntrackedSources>True</EmbedUntrackedSources>
+		<Copyright>Copyright 2017</Copyright>
+		<AssemblyVersion>1.1.0</AssemblyVersion>
+		<Version>1.1.0</Version>
 	</PropertyGroup>
 
 	<ItemGroup>

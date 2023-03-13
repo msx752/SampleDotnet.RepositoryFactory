@@ -13,13 +13,26 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 		</Content>
+		
 	</ItemGroup>
+	<Target Name="CopyDepsFiles" AfterTargets="Build" Condition="'$(TargetFramework)'!=''">
+		<ItemGroup>
+			<DepsFilePaths Include="$([System.IO.Path]::ChangeExtension('%(_ResolvedProjectReferencePaths.FullPath)', '.deps.json'))" />
+		</ItemGroup>
 
+		<Copy SourceFiles="%(DepsFilePaths.FullPath)" DestinationFolder="$(OutputPath)" Condition="Exists('%(DepsFilePaths.FullPath)')" />
+	</Target>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\SampleDotnet.RepositoryFactory\SampleDotnet.RepositoryFactory.csproj" />
+	</ItemGroup>
+	
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="7.0.3" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="7.0.3" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="7.0.3" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.1" />
 		<PackageReference Include="Shouldly" Version="4.1.0" />
 		<PackageReference Include="xunit" Version="2.4.2" />
 		<PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
@@ -35,10 +48,5 @@
 		<PackageReference Include="Moq" Version="4.18.4" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
 	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\..\src\SampleDotnet.RepositoryFactory\SampleDotnet.RepositoryFactory.csproj" />
-	</ItemGroup>
-
-
+	
 </Project>

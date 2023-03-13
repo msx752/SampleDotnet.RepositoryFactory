@@ -12,7 +12,6 @@ public class Repository<TDbContext>
     public Repository(TDbContext dbContext)
     {
         _context = dbContext;
-        RepositoryEntryEventHandler(_context);
     }
 
     public IQueryable<T> AsQueryable<T>() where T : class
@@ -62,17 +61,32 @@ public class Repository<TDbContext>
 
     public void Insert<T>(T entity) where T : class
     {
+        if (entity is IHasDateTimeOffset dt)
+            dt.CreatedAt = DateTimeOffset.Now;
+
         _context.Set<T>().Add(entity);
     }
 
     public void Insert<T>(params T[] entities) where T : class
     {
-        _context.Set<T>().AddRange(entities);
+        _context.Set<T>().AddRange(entities.Select(f =>
+        {
+            if (f is IHasDateTimeOffset dt)
+                dt.CreatedAt = DateTimeOffset.Now;
+
+            return f;
+        }));
     }
 
     public void Insert<T>(IEnumerable<T> entities) where T : class
     {
-        _context.Set<T>().AddRange(entities);
+        _context.Set<T>().AddRange(entities.Select(f =>
+        {
+            if (f is IHasDateTimeOffset dt)
+                dt.CreatedAt = DateTimeOffset.Now;
+
+            return f;
+        }));
     }
 
     public int SaveChanges()
@@ -85,6 +99,9 @@ public class Repository<TDbContext>
     {
         var entry = _context.Entry(entity);
         entry.State = EntityState.Modified;
+
+        if (entry.Entity is IHasDateTimeOffset dt)
+            dt.UpdatedAt = DateTimeOffset.Now;
     }
 
     public void Update<T>(params T[] entities) where T : class
@@ -110,33 +127,10 @@ public class Repository<TDbContext>
         {
             if (disposing)
             {
-                RepositoryEntryEventHandler(_context, true);
                 _context.Dispose();
             }
 
             disposedValue = true;
-        }
-    }
-
-    private static void RepositoryEntryEventHandler(DbContext _context, bool disposing = false)
-    {
-        try
-        {
-            var serviceProvider = _context.GetInfrastructure();
-            var entryEventNotifier = (IRepositoryEntryNotifier?)serviceProvider?.GetService(typeof(IRepositoryEntryNotifier));
-            if (serviceProvider != null && entryEventNotifier != null)
-            {
-                _context.ChangeTracker.Tracked -= (sender, e) => entryEventNotifier.RepositoryEntryEvent(sender, e, _context, serviceProvider);
-                if (!disposing)
-                    _context.ChangeTracker.Tracked += (sender, e) => entryEventNotifier.RepositoryEntryEvent(sender, e, _context, serviceProvider);
-
-                _context.ChangeTracker.StateChanged -= (sender, e) => entryEventNotifier.RepositoryEntryEvent(sender, e, _context, serviceProvider);
-                if (!disposing)
-                    _context.ChangeTracker.StateChanged += (sender, e) => entryEventNotifier.RepositoryEntryEvent(sender, e, _context, serviceProvider);
-            }
-        }
-        catch (Exception e)
-        {
         }
     }
 }
