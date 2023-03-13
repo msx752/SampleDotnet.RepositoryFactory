@@ -21,7 +21,7 @@
 		<EnableNETAnalyzers>True</EnableNETAnalyzers>
 		<SignAssembly>False</SignAssembly>
 		<PackageIcon>wfc2.png</PackageIcon>
-		<PackageTags>dotnet core net5 net6 net7 repository pattern repository factory</PackageTags>
+		<PackageTags>dotnet net6 net7 repository pattern repository factory</PackageTags>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
 		<IncludeSymbols>True</IncludeSymbols>
