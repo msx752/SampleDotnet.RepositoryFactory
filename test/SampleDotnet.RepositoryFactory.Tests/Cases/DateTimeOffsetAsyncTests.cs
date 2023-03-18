@@ -24,7 +24,7 @@ public class DateTimeOffsetAsyncTests
             IDbContextFactory<TestApplicationDbContext> dbcontext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
             using (IRepository<TestApplicationDbContext> repo = dbcontext.CreateRepository())
             {
-                TestUserEntity userEntity = new TestUserEntity();
+                TestUserEntity userEntity = new();
                 userEntity.Name = "TestName";
                 userEntity.Surname = "TestSurname";
 
@@ -54,7 +54,7 @@ public class DateTimeOffsetAsyncTests
             IDbContextFactory<TestApplicationDbContext> dbcontext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
             using (IRepository<TestApplicationDbContext> repo = dbcontext.CreateRepository())
             {
-                TestUserEntity userEntity = new TestUserEntity();
+                TestUserEntity userEntity = new();
                 userEntity.Name = "TestName";
                 userEntity.Surname = "TestSurname";
 
