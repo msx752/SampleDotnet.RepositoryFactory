@@ -12,7 +12,7 @@ public class DateTimeOffsetAsyncTests
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
             services.AddDbContextFactory<TestApplicationDbContext>(options =>
-                options.UseInMemoryDatabase("Case_set_CreatedAt_DateTimeOffset"));
+                options.UseInMemoryDatabase("Case_set_CreatedAt_DateTimeOffsetAsync"));
         });
 
         IHost b = host.Build();
@@ -42,7 +42,7 @@ public class DateTimeOffsetAsyncTests
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
             services.AddDbContextFactory<TestApplicationDbContext>(options =>
-                options.UseInMemoryDatabase("Case_set_UpdatedAt_DateTimeOffset"));
+                options.UseInMemoryDatabase("Case_set_UpdatedAt_DateTimeOffsetAsync"));
         });
 
         IHost b = host.Build();
