@@ -10,6 +10,10 @@ public interface IRepository : IDisposable
     int SaveChanges();
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    void Delete(object entity);
+
+    void Update(object entity);
 }
 
 public interface IRepository<TDbContext> : IRepository
