@@ -28,7 +28,7 @@ public class DateTimeOffsetTests
                 userEntity.Surname = "TestSurname";
 
                 repo.Insert(userEntity);
-                repo.SaveChanges();
+                ((IRepository)repo).SaveChanges();
 
                 userEntity.CreatedAt.ShouldNotBeNull();
             }
@@ -60,7 +60,7 @@ public class DateTimeOffsetTests
                 userEntity.UpdatedAt.ShouldBeNull();
 
                 repo.Insert(userEntity);
-                repo.SaveChanges();
+                ((IRepository)repo).SaveChanges();
 
                 userEntity.CreatedAt.ShouldNotBeNull();
                 userEntity.UpdatedAt.ShouldBeNull();
@@ -80,7 +80,7 @@ public class DateTimeOffsetTests
                 userEntity.UpdatedAt.ShouldBeNull();
 
                 repo.Update(userEntity);
-                repo.SaveChanges();
+                ((IRepository)repo).SaveChanges();
 
                 userEntity.CreatedAt.ShouldNotBeNull();
                 userEntity.UpdatedAt.ShouldNotBeNull();

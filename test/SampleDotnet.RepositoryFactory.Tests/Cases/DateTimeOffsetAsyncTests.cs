@@ -29,7 +29,7 @@ public class DateTimeOffsetAsyncTests
                 userEntity.Surname = "TestSurname";
 
                 await repo.InsertAsync(userEntity, cancellationTokenSource.Token);
-                repo.SaveChanges();
+                ((IRepository)repo).SaveChanges();
 
                 userEntity.CreatedAt.ShouldNotBeNull();
             }
@@ -62,7 +62,7 @@ public class DateTimeOffsetAsyncTests
                 userEntity.UpdatedAt.ShouldBeNull();
 
                 await repo.InsertAsync(userEntity, cancellationTokenSource.Token);
-                await repo.SaveChangesAsync(cancellationTokenSource.Token);
+                await ((IRepository)repo).SaveChangesAsync(cancellationTokenSource.Token);
 
                 userEntity.CreatedAt.ShouldNotBeNull();
                 userEntity.UpdatedAt.ShouldBeNull();
@@ -83,7 +83,7 @@ public class DateTimeOffsetAsyncTests
                 userEntity.UpdatedAt.ShouldBeNull();
 
                 repo.Update(userEntity);
-                await repo.SaveChangesAsync(cancellationTokenSource.Token);
+                await ((IRepository)repo).SaveChangesAsync(cancellationTokenSource.Token);
 
                 userEntity.CreatedAt.ShouldNotBeNull();
                 userEntity.UpdatedAt.ShouldNotBeNull();

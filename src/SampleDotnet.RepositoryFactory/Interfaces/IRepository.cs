@@ -1,10 +1,20 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Interfaces;
 
-public interface IRepository<TDbContext> : IDisposable
+public interface IRepository : IDisposable
+{
+    DatabaseFacade Database => CurrentDbContext.Database;
+    Type DbContextType => CurrentDbContext.GetType();
+
+    protected abstract DbContext CurrentDbContext { get; }
+
+    int SaveChanges();
+
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+}
+
+public interface IRepository<TDbContext> : IRepository
     where TDbContext : DbContext
 {
-    DatabaseFacade Database { get; }
-
     IQueryable<T> AsQueryable<T>() where T : class;
 
     void Delete<T>(T entity) where T : class;
@@ -36,10 +46,6 @@ public interface IRepository<TDbContext> : IDisposable
     Task InsertAsync<T>(IEnumerable<T> entities, CancellationToken cancellationToken = default) where T : class;
 
     Task InsertAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T : class;
-
-    int SaveChanges();
-
-    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
     void Update<T>(T entity) where T : class;
 
