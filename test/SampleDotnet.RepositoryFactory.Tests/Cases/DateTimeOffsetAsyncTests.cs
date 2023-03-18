@@ -20,6 +20,7 @@ public class DateTimeOffsetAsyncTests
         //scope1
         using (IServiceScope scope = b.Services.CreateScope())
         {
+            var cancellationTokenSource = new CancellationTokenSource();
             IDbContextFactory<TestApplicationDbContext> dbcontext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
             using (IRepository<TestApplicationDbContext> repo = dbcontext.CreateRepository())
             {
@@ -27,7 +28,7 @@ public class DateTimeOffsetAsyncTests
                 userEntity.Name = "TestName";
                 userEntity.Surname = "TestSurname";
 
-                await repo.InsertAsync(userEntity);
+                await repo.InsertAsync(userEntity, cancellationTokenSource.Token);
                 repo.SaveChanges();
 
                 userEntity.CreatedAt.ShouldNotBeNull();
@@ -49,6 +50,7 @@ public class DateTimeOffsetAsyncTests
         //scope1
         using (IServiceScope scope = b.Services.CreateScope())
         {
+            var cancellationTokenSource = new CancellationTokenSource();
             IDbContextFactory<TestApplicationDbContext> dbcontext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
             using (IRepository<TestApplicationDbContext> repo = dbcontext.CreateRepository())
             {
@@ -59,8 +61,8 @@ public class DateTimeOffsetAsyncTests
                 userEntity.CreatedAt.ShouldBeNull();
                 userEntity.UpdatedAt.ShouldBeNull();
 
-                await repo.InsertAsync(userEntity);
-                await repo.SaveChangesAsync();
+                await repo.InsertAsync(userEntity, cancellationTokenSource.Token);
+                await repo.SaveChangesAsync(cancellationTokenSource.Token);
 
                 userEntity.CreatedAt.ShouldNotBeNull();
                 userEntity.UpdatedAt.ShouldBeNull();
@@ -70,17 +72,18 @@ public class DateTimeOffsetAsyncTests
         //scope2
         using (IServiceScope scope = b.Services.CreateScope())
         {
+            var cancellationTokenSource = new CancellationTokenSource();
             IDbContextFactory<TestApplicationDbContext> dbcontext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
             using (IRepository<TestApplicationDbContext> repo = dbcontext.CreateRepository())
             {
-                TestUserEntity? userEntity = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == "TestName" && f.Surname == "TestSurname");
+                TestUserEntity? userEntity = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == "TestName" && f.Surname == "TestSurname", cancellationTokenSource.Token);
 
                 userEntity.ShouldNotBeNull();
                 userEntity.CreatedAt.ShouldNotBeNull();
                 userEntity.UpdatedAt.ShouldBeNull();
 
                 repo.Update(userEntity);
-                await repo.SaveChangesAsync();
+                await repo.SaveChangesAsync(cancellationTokenSource.Token);
 
                 userEntity.CreatedAt.ShouldNotBeNull();
                 userEntity.UpdatedAt.ShouldNotBeNull();
