@@ -19,8 +19,8 @@ public class DateTimeOffsetAsyncTests
 
         //scope1
         using (IServiceScope scope = b.Services.CreateScope())
+        using (var cancellationTokenSource = new CancellationTokenSource())
         {
-            var cancellationTokenSource = new CancellationTokenSource();
             IDbContextFactory<TestApplicationDbContext> dbcontext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
             using (IRepository<TestApplicationDbContext> repo = dbcontext.CreateRepository())
             {
@@ -29,7 +29,7 @@ public class DateTimeOffsetAsyncTests
                 userEntity.Surname = "TestSurname";
 
                 await repo.InsertAsync(userEntity, cancellationTokenSource.Token);
-                ((IRepository)repo).SaveChanges();
+                await ((IRepository)repo).SaveChangesAsync(cancellationTokenSource.Token);
 
                 userEntity.CreatedAt.ShouldNotBeNull();
             }
@@ -49,8 +49,8 @@ public class DateTimeOffsetAsyncTests
 
         //scope1
         using (IServiceScope scope = b.Services.CreateScope())
+        using (var cancellationTokenSource = new CancellationTokenSource())
         {
-            var cancellationTokenSource = new CancellationTokenSource();
             IDbContextFactory<TestApplicationDbContext> dbcontext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
             using (IRepository<TestApplicationDbContext> repo = dbcontext.CreateRepository())
             {
@@ -71,8 +71,8 @@ public class DateTimeOffsetAsyncTests
 
         //scope2
         using (IServiceScope scope = b.Services.CreateScope())
+        using (var cancellationTokenSource = new CancellationTokenSource())
         {
-            var cancellationTokenSource = new CancellationTokenSource();
             IDbContextFactory<TestApplicationDbContext> dbcontext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
             using (IRepository<TestApplicationDbContext> repo = dbcontext.CreateRepository())
             {
