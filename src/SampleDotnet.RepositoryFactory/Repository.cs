@@ -7,12 +7,12 @@ public class Repository<TDbContext>
     private readonly TDbContext _context;
     private bool disposedValue;
 
-    public DatabaseFacade Database { get => _context.Database; }
-
     public Repository(TDbContext dbContext)
     {
         _context = dbContext;
     }
+
+    public DatabaseFacade Database { get => _context.Database; }
 
     public IQueryable<T> AsQueryable<T>() where T : class
     {
@@ -48,15 +48,31 @@ public class Repository<TDbContext>
         return _context.Set<T>().Find(keyValues);
     }
 
+    public ValueTask<T?> FindAsync<T>(params object[] keyValues) where T : class
+    {
+        return _context.Set<T>().FindAsync(keyValues);
+    }
+
     public T? FirstOrDefault<T>(Expression<Func<T, bool>> predicate) where T : class
     {
         IQueryable<T> query = AsQueryable<T>();
         return query.FirstOrDefault(predicate);
     }
 
+    public Task<T?> FirstOrDefaultAsync<T>(Expression<Func<T, bool>> predicate) where T : class
+    {
+        IQueryable<T> query = AsQueryable<T>();
+        return query.FirstOrDefaultAsync(predicate);
+    }
+
     public T? GetById<T>(object id) where T : class
     {
         return Find<T>(id);
+    }
+
+    public ValueTask<T?> GetByIdAsync<T>(object id) where T : class
+    {
+        return FindAsync<T>(id);
     }
 
     public void Insert<T>(T entity) where T : class
@@ -89,9 +105,45 @@ public class Repository<TDbContext>
         }));
     }
 
+    public ValueTask<EntityEntry<T>> InsertAsync<T>(T entity) where T : class
+    {
+        if (entity is IHasDateTimeOffset dt)
+            dt.CreatedAt = DateTimeOffset.Now;
+
+        return _context.Set<T>().AddAsync(entity);
+    }
+
+    public Task InsertAsync<T>(params T[] entities) where T : class
+    {
+        return _context.Set<T>().AddRangeAsync(entities.Select(f =>
+        {
+            if (f is IHasDateTimeOffset dt)
+                dt.CreatedAt = DateTimeOffset.Now;
+
+            return f;
+        }));
+    }
+
+    public Task InsertAsync<T>(IEnumerable<T> entities) where T : class
+    {
+        return _context.Set<T>().AddRangeAsync(entities.Select(f =>
+        {
+            if (f is IHasDateTimeOffset dt)
+                dt.CreatedAt = DateTimeOffset.Now;
+
+            return f;
+        }));
+    }
+
     public int SaveChanges()
     {
         var result = _context.SaveChanges();
+        return result;
+    }
+
+    public Task<int> SaveChangesAsync()
+    {
+        var result = _context.SaveChangesAsync();
         return result;
     }
 

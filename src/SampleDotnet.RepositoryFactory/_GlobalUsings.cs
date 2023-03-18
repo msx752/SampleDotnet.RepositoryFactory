@@ -4,3 +4,4 @@ global using SampleDotnet.RepositoryFactory;
 global using SampleDotnet.RepositoryFactory.Interfaces;
 global using System.Data;
 global using System.Linq.Expressions;
+global using Microsoft.EntityFrameworkCore.ChangeTracking;

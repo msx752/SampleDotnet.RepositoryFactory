@@ -17,7 +17,11 @@ public interface IRepository<TDbContext> : IDisposable
 
     T? FirstOrDefault<T>(Expression<Func<T, bool>> predicate) where T : class;
 
+    Task<T?> FirstOrDefaultAsync<T>(Expression<Func<T, bool>> predicate) where T : class;
+
     T? GetById<T>(object id) where T : class;
+
+    ValueTask<T?> GetByIdAsync<T>(object id) where T : class;
 
     void Insert<T>(T entity) where T : class;
 
@@ -25,7 +29,15 @@ public interface IRepository<TDbContext> : IDisposable
 
     void Insert<T>(IEnumerable<T> entities) where T : class;
 
+    ValueTask<EntityEntry<T>> InsertAsync<T>(T entity) where T : class;
+
+    Task InsertAsync<T>(IEnumerable<T> entities) where T : class;
+
+    Task InsertAsync<T>(params T[] entities) where T : class;
+
     int SaveChanges();
+
+    Task<int> SaveChangesAsync();
 
     void Update<T>(T entity) where T : class;
 
