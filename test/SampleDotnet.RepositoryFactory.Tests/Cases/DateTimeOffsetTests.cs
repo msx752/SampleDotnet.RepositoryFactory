@@ -65,13 +65,18 @@ public class DateTimeOffsetTests
                 userEntity.CreatedAt.ShouldNotBeNull();
                 userEntity.UpdatedAt.ShouldBeNull();
             }
+        }
 
-            //scope2
+        //scope2
+        using (IServiceScope scope = b.Services.CreateScope())
+        {
+            IDbContextFactory<TestApplicationDbContext> dbcontext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
             using (IRepository<TestApplicationDbContext> repo = dbcontext.CreateRepository())
             {
                 TestUserEntity? userEntity = repo.FirstOrDefault<TestUserEntity>(f => f.Name == "TestName" && f.Surname == "TestSurname");
 
                 userEntity.ShouldNotBeNull();
+                userEntity.CreatedAt.ShouldNotBeNull();
                 userEntity.UpdatedAt.ShouldBeNull();
 
                 repo.Update(userEntity);
