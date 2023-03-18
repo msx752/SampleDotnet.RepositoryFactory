@@ -2,7 +2,10 @@
 
 public class TestUserEntity : IHasDateTimeOffset
 {
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public Guid Id { get; set; }
+
     public string Name { get; set; }
     public string Surname { get; set; }
 
