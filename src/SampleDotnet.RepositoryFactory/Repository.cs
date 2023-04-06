@@ -1,151 +1,108 @@
 ﻿namespace SampleDotnet.RepositoryFactory;
 
-public abstract class RepositoryBase : IRepository
-{
-    private readonly DbContext _context;
-
-    private bool disposedValue;
-
-    public RepositoryBase(DbContext context)
-    {
-        this._context = context;
-    }
-
-    public DbContext CurrentDbContext => _context;
-
-    public virtual void Delete(object entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity, nameof(entity));
-
-        var entry = CurrentDbContext.Entry(entity);
-        entry.State = EntityState.Deleted;
-    }
-
-    public void Dispose()
-    {
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
-    }
-
-    public virtual int SaveChanges()
-    {
-        return CurrentDbContext.SaveChanges();
-    }
-
-    public virtual Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        return CurrentDbContext.SaveChangesAsync(cancellationToken);
-    }
-
-    public virtual void Update(object entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity, nameof(entity));
-
-        var entry = CurrentDbContext.Entry(entity);
-        entry.State = EntityState.Modified;
-
-        if (entry.Entity is IHasDateTimeOffset dt)
-            dt.UpdatedAt = DateTimeOffset.Now;
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!disposedValue)
-        {
-            if (disposing)
-            {
-                try
-                {
-                    CurrentDbContext.Dispose();
-                }
-                catch
-                {
-                }
-            }
-
-            disposedValue = true;
-        }
-    }
-}
-
-public class Repository<TDbContext> : RepositoryBase
+internal class Repository<TDbContext> : RepositoryBase
     , IRepository<TDbContext>
     where TDbContext : DbContext
 {
-    public Repository(TDbContext dbContext)
+    private static readonly Func<object, object> funcCreatedAt = new((entity) =>
+    {
+        if (entity is IHasDateTimeOffset dt)
+            dt.CreatedAt = DateTimeOffset.Now;
+        return entity;
+    });
+
+    private readonly TransactionOptions transactionOptions;
+    private readonly TransactionScopeOption transactionScopeOption;
+
+    public Repository(TDbContext dbContext, TransactionScopeOption transactionScopeOption, System.Transactions.IsolationLevel isolationLevel)
         : base(dbContext)
     {
+        this.transactionScopeOption = transactionScopeOption;
+        this.transactionOptions = new() { IsolationLevel = isolationLevel };
     }
 
     public IQueryable<T> AsQueryable<T>() where T : class
     {
-        return CurrentDbContext.Set<T>().AsQueryable<T>();
+        return CachedContextSet<T>();
+    }
+
+    private DbSet<T> CachedContextSet<T>() where T : class
+    {
+        return (DbSet<T>)cachedDbSets.GetOrAdd(typeof(T).FullName, CurrentDbContext.Set<T>());
     }
 
     public void Delete<T>(T entity) where T : class
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
 
-        base.Delete(entity);
+        CachedContextSet<T>().Remove(entity);
     }
 
     public void Delete<T>(params T[] entities) where T : class
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        foreach (var item in entities)
-            Delete(item);
+        CachedContextSet<T>().RemoveRange(entities);
     }
 
     public void Delete<T>(IEnumerable<T> entities) where T : class
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        foreach (var item in entities)
-            Delete(item);
+        CachedContextSet<T>().RemoveRange(entities);
     }
 
     public T? Find<T>(params object[] keyValues) where T : class
     {
         ArgumentNullException.ThrowIfNull(keyValues, nameof(keyValues));
 
-        return CurrentDbContext.Set<T>().Find(keyValues);
+        using (CreateTransactionScope())
+            return CachedContextSet<T>().Find(keyValues);
     }
 
     public ValueTask<T?> FindAsync<T>(object[] keyValues, CancellationToken cancellationToken = default) where T : class
     {
         ArgumentNullException.ThrowIfNull(keyValues, nameof(keyValues));
 
-        return CurrentDbContext.Set<T>().FindAsync(keyValues, cancellationToken);
+        using (CreateTransactionScope())
+            return CachedContextSet<T>().FindAsync(keyValues, cancellationToken);
     }
 
     public T? FirstOrDefault<T>(Expression<Func<T, bool>> predicate) where T : class
     {
         ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
 
-        IQueryable<T> query = AsQueryable<T>();
-        return query.FirstOrDefault(predicate);
+        using (CreateTransactionScope())
+            return AsQueryable<T>().FirstOrDefault(predicate);
+    }
+
+    public T? FirstOrDefault<T>() where T : class
+    {
+        using (CreateTransactionScope())
+            return AsQueryable<T>().FirstOrDefault();
     }
 
     public Task<T?> FirstOrDefaultAsync<T>(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default) where T : class
     {
         ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
 
-        IQueryable<T> query = AsQueryable<T>();
-        return query.FirstOrDefaultAsync(predicate, cancellationToken);
+        using (CreateTransactionScope())
+            return AsQueryable<T>().FirstOrDefaultAsync(predicate, cancellationToken);
+    }
+
+    public Task<T?> FirstOrDefaultAsync<T>(CancellationToken cancellationToken = default) where T : class
+    {
+        using (CreateTransactionScope())
+            return AsQueryable<T>().FirstOrDefaultAsync(cancellationToken);
     }
 
     public T? GetById<T>(object id) where T : class
     {
-        ArgumentNullException.ThrowIfNull(id, nameof(id));
-
         return Find<T>(id);
     }
 
     public ValueTask<T?> GetByIdAsync<T>(object id, CancellationToken cancellationToken = default) where T : class
     {
-        ArgumentNullException.ThrowIfNull(id, nameof(id));
-
         return FindAsync<T>(new object[] { id }, cancellationToken);
     }
 
@@ -153,93 +110,44 @@ public class Repository<TDbContext> : RepositoryBase
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
 
-        if (entity is IHasDateTimeOffset dt)
-            dt.CreatedAt = DateTimeOffset.Now;
-
-        CurrentDbContext.Set<T>().Add(entity);
+        CachedContextSet<T>().Add((T)funcCreatedAt(entity));
     }
 
     public void Insert<T>(params T[] entities) where T : class
     {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-
-        CurrentDbContext.Set<T>().AddRange(entities.Select(f =>
-        {
-            if (f is IHasDateTimeOffset dt)
-                dt.CreatedAt = DateTimeOffset.Now;
-
-            return f;
-        }));
+        this._InternalInsert<T>(entities);
     }
 
     public void Insert<T>(IEnumerable<T> entities) where T : class
     {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-
-        CurrentDbContext.Set<T>().AddRange(entities.Select(f =>
-        {
-            if (f is IHasDateTimeOffset dt)
-                dt.CreatedAt = DateTimeOffset.Now;
-
-            return f;
-        }));
+        this._InternalInsert<T>(entities);
     }
 
     public ValueTask<EntityEntry<T>> InsertAsync<T>(T entity, CancellationToken cancellationToken = default) where T : class
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
 
-        if (entity is IHasDateTimeOffset dt)
-            dt.CreatedAt = DateTimeOffset.Now;
-
-        return CurrentDbContext.Set<T>().AddAsync(entity, cancellationToken);
+        return CachedContextSet<T>().AddAsync((T)funcCreatedAt(entity), cancellationToken);
     }
 
     public Task InsertAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T : class
     {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-
-        return CurrentDbContext.Set<T>().AddRangeAsync(entities.Select(f =>
-        {
-            if (f is IHasDateTimeOffset dt)
-                dt.CreatedAt = DateTimeOffset.Now;
-
-            return f;
-        }), cancellationToken);
+        return _InternalInsertAsync<T>(entities, cancellationToken);
     }
 
     public Task InsertAsync<T>(IEnumerable<T> entities, CancellationToken cancellationToken = default) where T : class
     {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-
-        return CurrentDbContext.Set<T>().AddRangeAsync(entities.Select(f =>
-        {
-            if (f is IHasDateTimeOffset dt)
-                dt.CreatedAt = DateTimeOffset.Now;
-
-            return f;
-        }), cancellationToken);
-    }
-
-    public void Update<T>(T entity) where T : class
-    {
-        base.Update(entity);
+        return _InternalInsertAsync<T>(entities, cancellationToken);
     }
 
     public void Update<T>(params T[] entities) where T : class
     {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-
-        for (int i = 0; i < entities.Length; i++)
-            Update<T>(entities[i]);
+        base.UpdateRange(entities);
     }
 
     public void Update<T>(IEnumerable<T> entities) where T : class
     {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-
-        for (int i = 0; i < entities.Count(); i++)
-            Update<T>(entities.ElementAt(i));
+        base.UpdateRange(entities);
     }
 
     public IQueryable<T> Where<T>(Expression<Func<T, bool>> predicate) where T : class
@@ -247,5 +155,34 @@ public class Repository<TDbContext> : RepositoryBase
         ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
 
         return AsQueryable<T>().Where(predicate);
+    }
+
+    public Task<List<T>> WhereWithTransactionScopeAsync<T>(Expression<Func<T, bool>> predicate) where T : class
+    {
+        ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
+
+        using (CreateTransactionScope())
+            return AsQueryable<T>().Where(predicate).ToListAsync();
+    }
+
+    private void _InternalInsert<T>(IEnumerable<T> entities) where T : class
+    {
+        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
+
+        CachedContextSet<T>().AddRange(entities.Select(f => (T)funcCreatedAt(f)));
+    }
+
+    private Task _InternalInsertAsync<T>(IEnumerable<T> entities, CancellationToken cancellationToken = default) where T : class
+    {
+        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
+
+        return CachedContextSet<T>().AddRangeAsync(entities.Select(f => (T)funcCreatedAt(f)), cancellationToken);
+    }
+
+    private TransactionScope CreateTransactionScope()
+    {
+        TransactionScopeAsyncFlowOption transactionScopeAsyncFlowOption =
+            transactionScopeOption == TransactionScopeOption.Suppress ? TransactionScopeAsyncFlowOption.Suppress : TransactionScopeAsyncFlowOption.Enabled;
+        return new TransactionScope(transactionScopeOption, transactionOptions, transactionScopeAsyncFlowOption);
     }
 }

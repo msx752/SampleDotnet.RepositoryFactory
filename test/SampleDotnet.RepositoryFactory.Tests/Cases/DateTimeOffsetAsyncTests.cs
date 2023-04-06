@@ -11,8 +11,12 @@ public class DateTimeOffsetAsyncTests
     {
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            services.AddDbContextFactory<TestApplicationDbContext>(options =>
-                options.UseInMemoryDatabase("Case_set_CreatedAt_DateTimeOffsetAsync"));
+            services.AddDbContextFactoryWithUnitOfWork<TestApplicationDbContext>(options =>
+            {
+                options.UseInMemoryDatabase("Case_set_CreatedAt_DateTimeOffsetAsync");
+                options.EnableSensitiveDataLogging();
+                options.EnableDetailedErrors();
+            });
         });
 
         IHost b = host.Build();
@@ -21,18 +25,18 @@ public class DateTimeOffsetAsyncTests
         using (IServiceScope scope = b.Services.CreateScope())
         using (var cancellationTokenSource = new CancellationTokenSource())
         {
-            IDbContextFactory<TestApplicationDbContext> dbcontext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
-            using (IRepository<TestApplicationDbContext> repo = dbcontext.CreateRepository())
+            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
             {
                 TestUserEntity userEntity = new();
                 userEntity.Name = "TestName";
                 userEntity.Surname = "TestSurname";
 
                 await repo.InsertAsync(userEntity, cancellationTokenSource.Token);
-                await ((IRepository)repo).SaveChangesAsync(cancellationTokenSource.Token);
 
                 userEntity.CreatedAt.ShouldNotBeNull();
             }
+            await uow.SaveChangesAsync(cancellationTokenSource.Token);
         }
     }
 
@@ -41,8 +45,11 @@ public class DateTimeOffsetAsyncTests
     {
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            services.AddDbContextFactory<TestApplicationDbContext>(options =>
-                options.UseInMemoryDatabase("Case_set_UpdatedAt_DateTimeOffsetAsync"));
+            services.AddDbContextFactoryWithUnitOfWork<TestApplicationDbContext>(options =>
+            {
+                options.UseInMemoryDatabase("Case_set_UpdatedAt_DateTimeOffsetAsync");
+                options.EnableDetailedErrors();
+            });
         });
 
         IHost b = host.Build();
@@ -51,8 +58,8 @@ public class DateTimeOffsetAsyncTests
         using (IServiceScope scope = b.Services.CreateScope())
         using (var cancellationTokenSource = new CancellationTokenSource())
         {
-            IDbContextFactory<TestApplicationDbContext> dbcontext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
-            using (IRepository<TestApplicationDbContext> repo = dbcontext.CreateRepository())
+            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
             {
                 TestUserEntity userEntity = new();
                 userEntity.Name = "TestName";
@@ -62,19 +69,19 @@ public class DateTimeOffsetAsyncTests
                 userEntity.UpdatedAt.ShouldBeNull();
 
                 await repo.InsertAsync(userEntity, cancellationTokenSource.Token);
-                await ((IRepository)repo).SaveChangesAsync(cancellationTokenSource.Token);
 
                 userEntity.CreatedAt.ShouldNotBeNull();
                 userEntity.UpdatedAt.ShouldBeNull();
             }
+            await uow.SaveChangesAsync(cancellationTokenSource.Token);
         }
 
         //scope2
         using (IServiceScope scope = b.Services.CreateScope())
         using (var cancellationTokenSource = new CancellationTokenSource())
         {
-            IDbContextFactory<TestApplicationDbContext> dbcontext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
-            using (IRepository<TestApplicationDbContext> repo = dbcontext.CreateRepository())
+            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
             {
                 TestUserEntity? userEntity = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == "TestName" && f.Surname == "TestSurname", cancellationTokenSource.Token);
 
@@ -83,11 +90,11 @@ public class DateTimeOffsetAsyncTests
                 userEntity.UpdatedAt.ShouldBeNull();
 
                 repo.Update(userEntity);
-                await ((IRepository)repo).SaveChangesAsync(cancellationTokenSource.Token);
 
                 userEntity.CreatedAt.ShouldNotBeNull();
                 userEntity.UpdatedAt.ShouldNotBeNull();
             }
+            await uow.SaveChangesAsync(cancellationTokenSource.Token);
         }
     }
 }

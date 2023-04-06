@@ -1,10 +1,11 @@
 ﻿public static class RepositoryExtensions
 {
-    public static IRepository<TDbContext> CreateRepository<TDbContext>(this IDbContextFactory<TDbContext> contextFactory)
-        where TDbContext : DbContext
+    public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddDbContextFactoryWithUnitOfWork<TContext>(this Microsoft.Extensions.DependencyInjection.IServiceCollection serviceCollection, Action<DbContextOptionsBuilder>? optionsAction = null, Microsoft.Extensions.DependencyInjection.ServiceLifetime lifetime = Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton)
+        where TContext : DbContext
     {
-        //https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration/#avoiding-dbcontext-threading-issues
-        var dbContext = contextFactory.CreateDbContext();
-        return new Repository<TDbContext>(dbContext);
+        Microsoft.Extensions.DependencyInjection.EntityFrameworkServiceCollectionExtensions.AddDbContextFactory<TContext, Microsoft.EntityFrameworkCore.Internal.DbContextFactory<TContext>>(serviceCollection, optionsAction, lifetime);
+        Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddScoped<IUnitOfWork, UnitOfWork>(serviceCollection);
+
+        return serviceCollection;
     }
 }

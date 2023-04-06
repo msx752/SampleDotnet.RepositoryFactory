@@ -1,5 +1,6 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Models;
 
+[Table("TestUserEntity")]
 public class TestUserEntity : IHasDateTimeOffset
 {
     /// <summary>
@@ -9,7 +10,10 @@ public class TestUserEntity : IHasDateTimeOffset
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public Guid Id { get; set; }
 
+    [Required(AllowEmptyStrings = false)]
     public string Name { get; set; }
+
+    [Required(AllowEmptyStrings = false)]
     public string Surname { get; set; }
 
     public DateTimeOffset? CreatedAt { get; set; }

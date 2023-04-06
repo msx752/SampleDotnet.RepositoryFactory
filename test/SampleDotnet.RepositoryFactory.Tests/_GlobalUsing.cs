@@ -6,4 +6,5 @@ global using SampleDotnet.RepositoryFactory.Tests.Models;
 global using Shouldly;
 global using System.ComponentModel.DataAnnotations;
 global using System.ComponentModel.DataAnnotations.Schema;
+global using System.Transactions;
 global using Xunit;

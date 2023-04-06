@@ -11,8 +11,12 @@ public class DateTimeOffsetTests
     {
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            services.AddDbContextFactory<TestApplicationDbContext>(options =>
-                options.UseInMemoryDatabase("Case_set_CreatedAt_DateTimeOffset"));
+            services.AddDbContextFactoryWithUnitOfWork<TestApplicationDbContext>(options =>
+            {
+                options.UseInMemoryDatabase("Case_set_CreatedAt_DateTimeOffset");
+                options.EnableSensitiveDataLogging();
+                options.EnableDetailedErrors();
+            });
         });
 
         IHost b = host.Build();
@@ -20,18 +24,18 @@ public class DateTimeOffsetTests
         //scope1
         using (IServiceScope scope = b.Services.CreateScope())
         {
-            IDbContextFactory<TestApplicationDbContext> dbcontext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
-            using (IRepository<TestApplicationDbContext> repo = dbcontext.CreateRepository())
+            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
             {
                 TestUserEntity userEntity = new();
                 userEntity.Name = "TestName";
                 userEntity.Surname = "TestSurname";
 
                 repo.Insert(userEntity);
-                ((IRepository)repo).SaveChanges();
 
                 userEntity.CreatedAt.ShouldNotBeNull();
             }
+            uow.SaveChanges();
         }
     }
 
@@ -40,8 +44,11 @@ public class DateTimeOffsetTests
     {
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            services.AddDbContextFactory<TestApplicationDbContext>(options =>
-                options.UseInMemoryDatabase("Case_set_UpdatedAt_DateTimeOffset"));
+            services.AddDbContextFactoryWithUnitOfWork<TestApplicationDbContext>(options =>
+            {
+                options.UseInMemoryDatabase("Case_set_UpdatedAt_DateTimeOffset");
+                options.EnableDetailedErrors();
+            });
         });
 
         IHost b = host.Build();
@@ -49,8 +56,8 @@ public class DateTimeOffsetTests
         //scope1
         using (IServiceScope scope = b.Services.CreateScope())
         {
-            IDbContextFactory<TestApplicationDbContext> dbcontext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
-            using (IRepository<TestApplicationDbContext> repo = dbcontext.CreateRepository())
+            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
             {
                 TestUserEntity userEntity = new();
                 userEntity.Name = "TestName";
@@ -60,18 +67,18 @@ public class DateTimeOffsetTests
                 userEntity.UpdatedAt.ShouldBeNull();
 
                 repo.Insert(userEntity);
-                ((IRepository)repo).SaveChanges();
 
                 userEntity.CreatedAt.ShouldNotBeNull();
                 userEntity.UpdatedAt.ShouldBeNull();
             }
+            uow.SaveChanges();
         }
 
         //scope2
         using (IServiceScope scope = b.Services.CreateScope())
         {
-            IDbContextFactory<TestApplicationDbContext> dbcontext = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
-            using (IRepository<TestApplicationDbContext> repo = dbcontext.CreateRepository())
+            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
             {
                 TestUserEntity? userEntity = repo.FirstOrDefault<TestUserEntity>(f => f.Name == "TestName" && f.Surname == "TestSurname");
 
@@ -80,11 +87,11 @@ public class DateTimeOffsetTests
                 userEntity.UpdatedAt.ShouldBeNull();
 
                 repo.Update(userEntity);
-                ((IRepository)repo).SaveChanges();
 
                 userEntity.CreatedAt.ShouldNotBeNull();
                 userEntity.UpdatedAt.ShouldNotBeNull();
             }
+            uow.SaveChanges();
         }
     }
 }
