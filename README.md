@@ -13,24 +13,26 @@ using SampleDotnet.RepositoryFactory;
 ```
 ServiceCollection Definition
 ``` c#
-services.AddDbContextFactory<UserDbContext>(opt =>
-    opt.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+services.AddDbContextFactoryWithUnitOfWork<UserDbContext>(opt =>
+    {
+        opt.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
+    });
 ```
 then we call transient scoped DbContext
 ``` c#
-    public class UserController : ControllerBase
+    public class UserController : Controller
     {
-        private readonly IDbContextFactory<UserDbContext> _contextFactory;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public UserController(IDbContextFactory<UserDbContext> contextFactory)
+        public UserController(IUnitOfWork unitOfWork)
         {
-            _contextFactory = contextFactory;
+            _unitOfWork = unitOfWork;
         }
 
-        [HttpGet("{id}")]
-        public ActionResult Get(Guid id)
+        [HttpDelete("{id}")]
+        public ActionResult Delete(Guid id)
         {
-            using (var repository = _contextFactory.CreateRepository())
+            using (var repository = _unitOfWork.CreateRepository<UserDbContext>())
             {
                 var personal = repository.FirstOrDefault<UserEntity>(f => f.Id == id);
 
@@ -39,9 +41,10 @@ then we call transient scoped DbContext
                 repository.Delete(personal);
 
                 //some operations goes here....
-
-                repository.SaveChanges();
             }
+
+            _unitOfWork.SaveChanges();
+            return Ok();
         }
     }
 ```
@@ -51,6 +54,8 @@ then we call transient scoped DbContext
 ``` c#
         public class TestUserEntity : IHasDateTimeOffset
         {
+            [Key]
+            [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
             public Guid Id { get; set; }
             public string Name { get; set; }
             public string Surname { get; set; }
