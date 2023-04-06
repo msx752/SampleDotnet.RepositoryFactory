@@ -11,7 +11,7 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<id>SampleDotnet.RepositoryFactory</id>
 		<Title>SampleDotnet.RepositoryFactory</Title>
-		<Description>EFCore DbContextFactory Pattern used on RepositoryFactory</Description>
+		<Description>EFCore UnitOfWork Pattern used on DbContextFactory</Description>
 		<Summary></Summary>
 		<Authors>Mustafa Salih ASLIM;</Authors>
 		<PackageProjectUrl>https://github.com/msx752/SampleDotnet.RepositoryFactory</PackageProjectUrl>
@@ -21,7 +21,7 @@
 		<EnableNETAnalyzers>True</EnableNETAnalyzers>
 		<SignAssembly>False</SignAssembly>
 		<PackageIcon>wfc2.png</PackageIcon>
-		<PackageTags>dotnet net6 net7 repository pattern repository factory</PackageTags>
+		<PackageTags>dotnet net6 net7 unitofwork pattern repository factory</PackageTags>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
 		<IncludeSymbols>True</IncludeSymbols>
@@ -31,8 +31,8 @@
 		<ContinuousIntegrationBuild>True</ContinuousIntegrationBuild>
 		<EmbedUntrackedSources>True</EmbedUntrackedSources>
 		<Copyright>Copyright 2023</Copyright>
-		<AssemblyVersion>2.1.0</AssemblyVersion>
-		<Version>2.1.0</Version>
+		<AssemblyVersion>3.0.0.1</AssemblyVersion>
+		<Version>3.0.0.1-alpha</Version>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -55,7 +55,7 @@
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="6.0.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.0" />
 		<PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.0" />
-		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.0" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.1" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.0">
 			<PrivateAssets>all</PrivateAssets>

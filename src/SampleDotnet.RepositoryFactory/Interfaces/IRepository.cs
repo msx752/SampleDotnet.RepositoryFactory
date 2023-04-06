@@ -2,14 +2,21 @@
 
 public interface IRepository : IDisposable
 {
+    DbContextId CurrentContextId => CurrentDbContext.ContextId;
+
     DatabaseFacade Database => CurrentDbContext.Database;
+
     Type DbContextType => CurrentDbContext.GetType();
 
     protected abstract DbContext CurrentDbContext { get; }
 
-    int SaveChanges();
+    void Delete(object entity);
 
-    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    void DeleteRange(params object[] entities);
+
+    void Update(object entity);
+
+    void UpdateRange(params object[] entities);
 }
 
 public interface IRepository<TDbContext> : IRepository
@@ -27,7 +34,11 @@ public interface IRepository<TDbContext> : IRepository
 
     ValueTask<T?> FindAsync<T>(object[] keyValues, CancellationToken cancellationToken = default) where T : class;
 
+    T? FirstOrDefault<T>() where T : class;
+
     T? FirstOrDefault<T>(Expression<Func<T, bool>> predicate) where T : class;
+
+    Task<T?> FirstOrDefaultAsync<T>(CancellationToken cancellationToken = default) where T : class;
 
     Task<T?> FirstOrDefaultAsync<T>(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default) where T : class;
 
@@ -47,11 +58,11 @@ public interface IRepository<TDbContext> : IRepository
 
     Task InsertAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T : class;
 
-    void Update<T>(T entity) where T : class;
-
     void Update<T>(params T[] entities) where T : class;
 
     void Update<T>(IEnumerable<T> entities) where T : class;
 
     IQueryable<T> Where<T>(Expression<Func<T, bool>> predicate) where T : class;
+
+    Task<List<T>> WhereWithTransactionScopeAsync<T>(Expression<Func<T, bool>> predicate) where T : class;
 }
