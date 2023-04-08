@@ -72,10 +72,7 @@ internal class UnitOfWork : IUnitOfWork
 
             for (int i = 0; i < cached.Length; i++)
             {
-                if (_dbContextPool.TryDequeue(out var dbContext) && dbContext != null)
-                {
-                    dbContext.ChangeTracker.AcceptAllChanges();
-                }
+                cached[i].ChangeTracker.AcceptAllChanges();
             }
         }
         catch (Exception e)

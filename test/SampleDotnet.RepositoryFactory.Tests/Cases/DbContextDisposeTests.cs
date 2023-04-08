@@ -81,36 +81,49 @@
             });
 
             using (IHost build = host.Build())
-            //request scope
-            using (IServiceScope requestScope = build.Services.CreateScope())
-            using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
-            using (var cancellationTokenSource = new CancellationTokenSource())
             {
-                using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
-                {
-                    var user1 = new TestUserEntity()
-                    {
-                        Name = "Name",
-                        Surname = "Surname",
-                    };
-
-                    user1.CreatedAt.ShouldBeNull();
-                    await repository.InsertAsync(user1);
-
-                    await unitOfWork.SaveChangesAsync();
-                }
-
-                Parallel.For(1, 100, new ParallelOptions() { MaxDegreeOfParallelism = 5 }, async (i) =>
+                //request scope 1
+                using (IServiceScope requestScope = build.Services.CreateScope())
+                using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
+                using (var cancellationTokenSource = new CancellationTokenSource())
                 {
                     using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
                     {
-                        var user1 = await repository.FirstOrDefaultAsync<TestUserEntity>(f => f.Surname == "Surname");
+                        var user1 = new TestUserEntity()
+                        {
+                            Name = "Name",
+                            Surname = "Surname",
+                        };
 
-                        user1.Name = "Name" + i.ToString("00");
+                        user1.CreatedAt.ShouldBeNull();
+                        await repository.InsertAsync(user1);
 
                         await unitOfWork.SaveChangesAsync();
+                        await unitOfWork.SaveChangesAsync();
                     }
-                });
+                }
+
+                //request scope 2
+                using (IServiceScope requestScope = build.Services.CreateScope())
+                using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
+                using (var cancellationTokenSource = new CancellationTokenSource())
+                {
+                    Parallel.For(0, 25, new ParallelOptions() { MaxDegreeOfParallelism = 3 }, async (i) =>
+                    {
+                        using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                        {
+                            var user1 = await repository.FirstOrDefaultAsync<TestUserEntity>(f => f.Surname == "Surname");
+
+                            user1.Name = "Name" + i.ToString("00");
+
+                            await unitOfWork.SaveChangesAsync();
+
+                            repository.Update(user1);
+
+                            await unitOfWork.SaveChangesAsync();
+                        }
+                    });
+                }
             }
         }
     }
