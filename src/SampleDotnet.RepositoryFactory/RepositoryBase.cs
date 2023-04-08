@@ -5,7 +5,7 @@ namespace SampleDotnet.RepositoryFactory;
 
 internal abstract class RepositoryBase : IRepository
 {
-    private static readonly Func<object, object> funcUpdatedAt = new((entity) =>
+    private static readonly Func<object, object> _funcUpdatedAt = new((entity) =>
     {
         if (entity is IHasDateTimeOffset dt)
             dt.UpdatedAt = DateTimeOffset.Now;
@@ -13,7 +13,7 @@ internal abstract class RepositoryBase : IRepository
     });
 
     private readonly DbContext _context;
-    internal readonly ConcurrentDictionary<string, IQueryable> cachedDbSets = new();
+    internal readonly ConcurrentDictionary<string, IQueryable> _cachedDbSets = new();
     private bool disposedValue;
 
     protected RepositoryBase(DbContext context)
@@ -44,7 +44,7 @@ internal abstract class RepositoryBase : IRepository
 
     public virtual void UpdateRange(params object[] entities)
     {
-        _context.UpdateRange(entities.Select(f => funcUpdatedAt(f)));
+        _context.UpdateRange(entities.Select(f => _funcUpdatedAt(f)));
     }
 
     protected virtual void Dispose(bool disposing)
@@ -53,7 +53,7 @@ internal abstract class RepositoryBase : IRepository
         {
             if (disposing)
             {
-                cachedDbSets.Clear();
+                _cachedDbSets.Clear();
             }
 
             disposedValue = true;

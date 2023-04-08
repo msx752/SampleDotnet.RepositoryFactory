@@ -4,7 +4,7 @@ internal class Repository<TDbContext> : RepositoryBase
     , IRepository<TDbContext>
     where TDbContext : DbContext
 {
-    private static readonly Func<object, object> funcCreatedAt = new((entity) =>
+    private static readonly Func<object, object> _funcCreatedAt = new((entity) =>
     {
         if (entity is IHasDateTimeOffset dt)
             dt.CreatedAt = DateTimeOffset.Now;
@@ -28,7 +28,7 @@ internal class Repository<TDbContext> : RepositoryBase
 
     private DbSet<T> CachedContextSet<T>() where T : class
     {
-        return (DbSet<T>)cachedDbSets.GetOrAdd(typeof(T).FullName, CurrentDbContext.Set<T>());
+        return (DbSet<T>)_cachedDbSets.GetOrAdd(typeof(T).FullName, CurrentDbContext.Set<T>());
     }
 
     public void Delete<T>(T entity) where T : class
@@ -110,7 +110,7 @@ internal class Repository<TDbContext> : RepositoryBase
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
 
-        CachedContextSet<T>().Add((T)funcCreatedAt(entity));
+        CachedContextSet<T>().Add((T)_funcCreatedAt(entity));
     }
 
     public void Insert<T>(params T[] entities) where T : class
@@ -127,7 +127,7 @@ internal class Repository<TDbContext> : RepositoryBase
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
 
-        return CachedContextSet<T>().AddAsync((T)funcCreatedAt(entity), cancellationToken);
+        return CachedContextSet<T>().AddAsync((T)_funcCreatedAt(entity), cancellationToken);
     }
 
     public Task InsertAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T : class
@@ -169,14 +169,14 @@ internal class Repository<TDbContext> : RepositoryBase
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        CachedContextSet<T>().AddRange(entities.Select(f => (T)funcCreatedAt(f)));
+        CachedContextSet<T>().AddRange(entities.Select(f => (T)_funcCreatedAt(f)));
     }
 
     private Task _InternalInsertAsync<T>(IEnumerable<T> entities, CancellationToken cancellationToken = default) where T : class
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        return CachedContextSet<T>().AddRangeAsync(entities.Select(f => (T)funcCreatedAt(f)), cancellationToken);
+        return CachedContextSet<T>().AddRangeAsync(entities.Select(f => (T)_funcCreatedAt(f)), cancellationToken);
     }
 
     //private TransactionScope CreateTransactionScope()
