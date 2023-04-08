@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SampleDotnet.RepositoryFactory.Tests.Cases
+﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases
 {
     public class DbContextDisposeTests
     {
@@ -26,7 +20,7 @@ namespace SampleDotnet.RepositoryFactory.Tests.Cases
                     //cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
                     //options.UseSqlServer(cnnBuilder.ToString());
 
-                    options.UseInMemoryDatabase("Case_UnitOfWork_Rollback");
+                    options.UseInMemoryDatabase("Case_DbContext_Should_Not_Throw_ObjectDisposedException");
                     options.EnableSensitiveDataLogging();
                     options.EnableDetailedErrors();
                 });
