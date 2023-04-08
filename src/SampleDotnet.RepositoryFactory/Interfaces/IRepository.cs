@@ -2,13 +2,13 @@
 
 public interface IRepository : IDisposable
 {
-    DbContextId CurrentContextId => CurrentDbContext.ContextId;
+    DbContextId CurrentContextId => DbContext.ContextId;
 
-    DatabaseFacade Database => CurrentDbContext.Database;
+    DatabaseFacade Database => DbContext.Database;
 
-    Type DbContextType => CurrentDbContext.GetType();
+    ChangeTracker ChangeTracker => DbContext.ChangeTracker;
 
-    protected abstract DbContext CurrentDbContext { get; }
+    DbContext DbContext { get; }
 
     void Delete(object entity);
 
@@ -17,6 +17,8 @@ public interface IRepository : IDisposable
     void Update(object entity);
 
     void UpdateRange(params object[] entities);
+
+    DbContext RefreshDbContext();
 }
 
 public interface IRepository<TDbContext> : IRepository
