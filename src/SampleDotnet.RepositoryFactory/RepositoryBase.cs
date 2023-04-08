@@ -4,22 +4,22 @@ namespace SampleDotnet.RepositoryFactory;
 
 internal abstract class RepositoryBase : IRepository
 {
-    private static readonly Func<object, object> funcUpdatedAt = new((entity) =>
+    private static readonly Func<object, object> _funcUpdatedAt = new((entity) =>
     {
         if (entity is IHasDateTimeOffset dt)
             dt.UpdatedAt = DateTimeOffset.Now;
         return entity;
     });
 
-    private readonly DbContext _context;
-    internal readonly ConcurrentDictionary<string, IQueryable> cachedDbSets = new();
+    private DbContext context;
+    internal readonly ConcurrentDictionary<string, IQueryable> _cachedDbSets = new();
 
     protected RepositoryBase(DbContext context)
     {
-        this._context = context;
+        this.context = context;
     }
 
-    public DbContext CurrentDbContext => _context;
+    public DbContext DbContext => context;
 
     public virtual void Delete(object entity)
     {
@@ -30,12 +30,12 @@ internal abstract class RepositoryBase : IRepository
 
     public virtual void DeleteRange(params object[] entities)
     {
-        _context.RemoveRange(entities);
+        context.RemoveRange(entities);
     }
 
     public void Dispose()
     {
-        cachedDbSets.Clear();
+        _cachedDbSets.Clear();
         GC.SuppressFinalize(this);
     }
 
@@ -48,6 +48,17 @@ internal abstract class RepositoryBase : IRepository
 
     public virtual void UpdateRange(params object[] entities)
     {
-        _context.UpdateRange(entities.Select(f => funcUpdatedAt(f)));
+        context.UpdateRange(entities.Select(f => _funcUpdatedAt(f)));
+    }
+
+    public abstract DbContext CreateDbContext();
+
+    public DbContext RefreshDbContext()
+    {
+        try { context.Dispose(); } catch { }
+
+        context = CreateDbContext();
+
+        return context;
     }
 }

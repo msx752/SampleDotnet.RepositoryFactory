@@ -4,15 +4,15 @@ namespace SampleDotnet.RepositoryFactory;
 
 internal class UnitOfWork : IUnitOfWork
 {
-    private readonly Queue<DbContext> dbContextPool = new();
-    private readonly ConcurrentDictionary<DbContextId, IRepository> repositoryPool = new();
-    private readonly SemaphoreSlim semaphoreSlim = new(1, 1);
-    private readonly IServiceProvider serviceProvider;
+    private readonly Queue<DbContextId> _dbContextQueue = new();
+    private readonly ConcurrentDictionary<DbContextId, IRepository> _repositoryPool = new();
+    private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
+    private readonly IServiceProvider _serviceProvider;
     private bool disposedValue;
 
     public UnitOfWork(IServiceProvider serviceProvider)
     {
-        this.serviceProvider = serviceProvider;
+        this._serviceProvider = serviceProvider;
     }
 
     public bool IsDbConcurrencyExceptionThrown { get => SaveChangesException != null && SaveChangesException.Exception is DbUpdateConcurrencyException; }
@@ -22,14 +22,12 @@ internal class UnitOfWork : IUnitOfWork
     public IRepository<TDbContext> CreateRepository<TDbContext>(System.Transactions.TransactionScopeOption transactionScopeOption = System.Transactions.TransactionScopeOption.Required, System.Transactions.IsolationLevel isolationLevel = System.Transactions.IsolationLevel.ReadCommitted)
         where TDbContext : DbContext
     {
-        var dbContext = serviceProvider
-            .GetRequiredService<IDbContextFactory<TDbContext>>()
-            .CreateDbContext();
-
-        dbContextPool.Enqueue(dbContext);
+        var dbContext = _serviceProvider
+            .GetRequiredService<IDbContextFactory<TDbContext>>();
 
         var repository = new Repository<TDbContext>(dbContext, transactionScopeOption, isolationLevel);
-        repositoryPool.TryAdd(dbContext.ContextId, repository);
+        _dbContextQueue.Enqueue(repository.DbContext.ContextId);
+        _repositoryPool.TryAdd(repository.DbContext.ContextId, repository);
         return repository;
     }
 
@@ -49,33 +47,45 @@ internal class UnitOfWork : IUnitOfWork
         DbContext? thrownExceptionDbContext = null;
         try
         {
-            await semaphoreSlim.WaitAsync(cancellationToken);
+            await _semaphoreSlim.WaitAsync(cancellationToken);
 
-            int count = dbContextPool.Count;
-            foreach (var dbContext in dbContextPool)
+            int count = _dbContextQueue.Count;
+            foreach (var dbContextKey in _dbContextQueue)
             {
-                try
+                if (_repositoryPool.TryGetValue(dbContextKey, out var repo))
                 {
-                    if (!dbContext.ChangeTracker.AutoDetectChangesEnabled)
-                        dbContext.ChangeTracker.DetectChanges();
-                    await dbContext.SaveChangesAsync(false, cancellationToken);
-                }
-                catch
-                {
-                    thrownExceptionDbContext = dbContext;
-                    foreach (var context in dbContextPool)
+                    try
                     {
-                        await context.RollbackChangesAsync(false, cancellationToken);
+                        if (!repo.ChangeTracker.AutoDetectChangesEnabled)
+                            repo.ChangeTracker.DetectChanges();
+                        await repo.DbContext.SaveChangesAsync(false, cancellationToken);
                     }
-                    throw;
+                    catch
+                    {
+                        thrownExceptionDbContext = repo.DbContext;
+
+                        foreach (var dbContextKey2 in _dbContextQueue)
+                        {
+                            if (_repositoryPool.TryGetValue(dbContextKey2, out var repo2))
+                            {
+                                await repo2.DbContext.RollbackChangesAsync(false, cancellationToken);
+                            }
+                        }
+                        throw;
+                    }
                 }
             }
 
             for (int i = 0; i < count; i++)
             {
-                if (dbContextPool.TryDequeue(out var dbContext) && dbContext != null)
+                if (_dbContextQueue.TryDequeue(out var dbContextKey) && dbContextKey != null)
                 {
-                    dbContext.SilentDbContextDispose(false/*try true if required*/);
+                    if (_repositoryPool.TryRemove(dbContextKey, out var repo))
+                    {
+                        var newDbContext = repo.RefreshDbContext();
+                        _dbContextQueue.Enqueue(newDbContext.ContextId);
+                        _repositoryPool.TryAdd(newDbContext.ContextId, repo);
+                    }
                 }
             }
         }
@@ -86,7 +96,7 @@ internal class UnitOfWork : IUnitOfWork
         }
         finally
         {
-            semaphoreSlim.Release();
+            _semaphoreSlim.Release();
         }
         return true;
     }
@@ -97,17 +107,16 @@ internal class UnitOfWork : IUnitOfWork
         {
             if (disposing)
             {
-                foreach (var key in repositoryPool.Keys)
+                foreach (var key in _repositoryPool.Keys)
                 {
-                    if (repositoryPool.TryRemove(key, out var repository))
+                    if (_repositoryPool.TryRemove(key, out var repository))
                     {
                         try { repository.Dispose(); } catch { }
                     }
                 }
-                while (dbContextPool.TryDequeue(out var dbContext) && dbContext != null)
-                    dbContext.SilentDbContextDispose();
 
-                semaphoreSlim.Dispose();
+                _dbContextQueue.Clear();
+                _semaphoreSlim.Dispose();
             }
             disposedValue = true;
         }
