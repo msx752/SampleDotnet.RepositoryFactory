@@ -21,7 +21,7 @@ internal abstract class RepositoryBase : IRepository
         this._context = context;
     }
 
-    public DbContext CurrentDbContext => _context;
+    public DbContext DbContext => _context;
 
     public virtual void Delete(object entity)
     {

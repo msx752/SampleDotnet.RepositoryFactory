@@ -28,7 +28,7 @@ internal class Repository<TDbContext> : RepositoryBase
 
     private DbSet<T> CachedContextSet<T>() where T : class
     {
-        return (DbSet<T>)_cachedDbSets.GetOrAdd(typeof(T).FullName, CurrentDbContext.Set<T>());
+        return (DbSet<T>)_cachedDbSets.GetOrAdd(typeof(T).FullName, DbContext.Set<T>());
     }
 
     public void Delete<T>(T entity) where T : class
