@@ -1,11 +1,10 @@
 ﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
 
 namespace SampleDotnet.RepositoryFactory;
 
 internal class UnitOfWork : IUnitOfWork
 {
-    private readonly Queue<DbContextId> _dbContextPool = new();
+    private readonly Queue<DbContextId> _dbContextQueue = new();
     private readonly ConcurrentDictionary<DbContextId, IRepository> _repositoryPool = new();
     private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
     private readonly IServiceProvider _serviceProvider;
@@ -27,7 +26,7 @@ internal class UnitOfWork : IUnitOfWork
             .GetRequiredService<IDbContextFactory<TDbContext>>();
 
         var repository = new Repository<TDbContext>(dbContext, transactionScopeOption, isolationLevel);
-        _dbContextPool.Enqueue(repository.DbContext.ContextId);
+        _dbContextQueue.Enqueue(repository.DbContext.ContextId);
         _repositoryPool.TryAdd(repository.DbContext.ContextId, repository);
         return repository;
     }
@@ -50,8 +49,8 @@ internal class UnitOfWork : IUnitOfWork
         {
             await _semaphoreSlim.WaitAsync(cancellationToken);
 
-            int count = _dbContextPool.Count;
-            foreach (var dbContextKey in _dbContextPool)
+            int count = _dbContextQueue.Count;
+            foreach (var dbContextKey in _dbContextQueue)
             {
                 if (_repositoryPool.TryGetValue(dbContextKey, out var repo))
                 {
@@ -65,7 +64,7 @@ internal class UnitOfWork : IUnitOfWork
                     {
                         thrownExceptionDbContext = repo.DbContext;
 
-                        foreach (var dbContextKey2 in _dbContextPool)
+                        foreach (var dbContextKey2 in _dbContextQueue)
                         {
                             if (_repositoryPool.TryGetValue(dbContextKey2, out var repo2))
                             {
@@ -79,12 +78,12 @@ internal class UnitOfWork : IUnitOfWork
 
             for (int i = 0; i < count; i++)
             {
-                if (_dbContextPool.TryDequeue(out var dbContextKey) && dbContextKey != null)
+                if (_dbContextQueue.TryDequeue(out var dbContextKey) && dbContextKey != null)
                 {
                     if (_repositoryPool.TryRemove(dbContextKey, out var repo))
                     {
                         var newDbContext = repo.RefreshDbContext();
-                        _dbContextPool.Enqueue(newDbContext.ContextId);
+                        _dbContextQueue.Enqueue(newDbContext.ContextId);
                         _repositoryPool.TryAdd(newDbContext.ContextId, repo);
                     }
                 }
@@ -116,7 +115,7 @@ internal class UnitOfWork : IUnitOfWork
                     }
                 }
 
-                _dbContextPool.Clear();
+                _dbContextQueue.Clear();
                 _semaphoreSlim.Dispose();
             }
             disposedValue = true;
