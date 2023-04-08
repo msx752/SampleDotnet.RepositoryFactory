@@ -17,8 +17,6 @@ public interface IRepository : IDisposable
     void Update(object entity);
 
     void UpdateRange(params object[] entities);
-
-    DbContext RefreshDbContext();
 }
 
 public interface IRepository<TDbContext> : IRepository
