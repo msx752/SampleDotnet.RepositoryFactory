@@ -11,14 +11,14 @@ internal class Repository<TDbContext> : RepositoryBase
         return entity;
     });
 
-    private readonly TransactionOptions transactionOptions;
-    private readonly TransactionScopeOption transactionScopeOption;
+    //private readonly TransactionOptions transactionOptions;
+    //private readonly TransactionScopeOption transactionScopeOption;
 
-    public Repository(TDbContext dbContext, TransactionScopeOption transactionScopeOption, System.Transactions.IsolationLevel isolationLevel)
+    public Repository(TDbContext dbContext/*, TransactionScopeOption transactionScopeOption, System.Transactions.IsolationLevel isolationLevel*/)
         : base(dbContext)
     {
-        this.transactionScopeOption = transactionScopeOption;
-        this.transactionOptions = new() { IsolationLevel = isolationLevel };
+        //this.transactionScopeOption = transactionScopeOption;
+        //this.transactionOptions = new() { IsolationLevel = isolationLevel };
     }
 
     public IQueryable<T> AsQueryable<T>() where T : class
@@ -56,44 +56,44 @@ internal class Repository<TDbContext> : RepositoryBase
     {
         ArgumentNullException.ThrowIfNull(keyValues, nameof(keyValues));
 
-        using (CreateTransactionScope())
-            return CachedContextSet<T>().Find(keyValues);
+        //using (CreateTransactionScope())
+        return CachedContextSet<T>().Find(keyValues);
     }
 
     public ValueTask<T?> FindAsync<T>(object[] keyValues, CancellationToken cancellationToken = default) where T : class
     {
         ArgumentNullException.ThrowIfNull(keyValues, nameof(keyValues));
 
-        using (CreateTransactionScope())
-            return CachedContextSet<T>().FindAsync(keyValues, cancellationToken);
+        //using (CreateTransactionScope())
+        return CachedContextSet<T>().FindAsync(keyValues, cancellationToken);
     }
 
     public T? FirstOrDefault<T>(Expression<Func<T, bool>> predicate) where T : class
     {
         ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
 
-        using (CreateTransactionScope())
-            return AsQueryable<T>().FirstOrDefault(predicate);
+        //using (CreateTransactionScope())
+        return AsQueryable<T>().FirstOrDefault(predicate);
     }
 
     public T? FirstOrDefault<T>() where T : class
     {
-        using (CreateTransactionScope())
-            return AsQueryable<T>().FirstOrDefault();
+        //using (CreateTransactionScope())
+        return AsQueryable<T>().FirstOrDefault();
     }
 
     public Task<T?> FirstOrDefaultAsync<T>(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default) where T : class
     {
         ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
 
-        using (CreateTransactionScope())
-            return AsQueryable<T>().FirstOrDefaultAsync(predicate, cancellationToken);
+        //using (CreateTransactionScope())
+        return AsQueryable<T>().FirstOrDefaultAsync(predicate, cancellationToken);
     }
 
     public Task<T?> FirstOrDefaultAsync<T>(CancellationToken cancellationToken = default) where T : class
     {
-        using (CreateTransactionScope())
-            return AsQueryable<T>().FirstOrDefaultAsync(cancellationToken);
+        //using (CreateTransactionScope())
+        return AsQueryable<T>().FirstOrDefaultAsync(cancellationToken);
     }
 
     public T? GetById<T>(object id) where T : class
@@ -161,8 +161,8 @@ internal class Repository<TDbContext> : RepositoryBase
     {
         ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
 
-        using (CreateTransactionScope())
-            return AsQueryable<T>().Where(predicate).ToListAsync();
+        //using (CreateTransactionScope())
+        return AsQueryable<T>().Where(predicate).ToListAsync();
     }
 
     private void _InternalInsert<T>(IEnumerable<T> entities) where T : class
@@ -179,10 +179,10 @@ internal class Repository<TDbContext> : RepositoryBase
         return CachedContextSet<T>().AddRangeAsync(entities.Select(f => (T)funcCreatedAt(f)), cancellationToken);
     }
 
-    private TransactionScope CreateTransactionScope()
-    {
-        TransactionScopeAsyncFlowOption transactionScopeAsyncFlowOption =
-            transactionScopeOption == TransactionScopeOption.Suppress ? TransactionScopeAsyncFlowOption.Suppress : TransactionScopeAsyncFlowOption.Enabled;
-        return new TransactionScope(transactionScopeOption, transactionOptions, transactionScopeAsyncFlowOption);
-    }
+    //private TransactionScope CreateTransactionScope()
+    //{
+    //    TransactionScopeAsyncFlowOption transactionScopeAsyncFlowOption =
+    //        transactionScopeOption == TransactionScopeOption.Suppress ? TransactionScopeAsyncFlowOption.Suppress : TransactionScopeAsyncFlowOption.Suppress;
+    //    return new TransactionScope(transactionScopeOption, transactionOptions, transactionScopeAsyncFlowOption);
+    //}
 }

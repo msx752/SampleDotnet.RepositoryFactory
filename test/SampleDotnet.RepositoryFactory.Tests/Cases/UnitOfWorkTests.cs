@@ -340,7 +340,7 @@ public class UnitOfWorkTests
 
                 //instance 3 : Select -> Update committed Entity
                 {
-                    using (IRepository<FirstDbContext> repo = unitOfWork.CreateRepository<FirstDbContext>(isolationLevel: System.Transactions.IsolationLevel.ReadCommitted))
+                    using (IRepository<FirstDbContext> repo = unitOfWork.CreateRepository<FirstDbContext>(/*isolationLevel: System.Transactions.IsolationLevel.ReadCommitted*/))
                     {
                         var entity = await repo.FirstOrDefaultAsync<FirstDbEntity>(f => f.ProductName == "Product1");
                         entity.ShouldNotBeNull();
@@ -373,7 +373,7 @@ public class UnitOfWorkTests
 
                 //instance 5 : Select -> Delete committed Entity
                 {
-                    using (IRepository<SecondDbContext> repo = unitOfWork.CreateRepository<SecondDbContext>(isolationLevel: System.Transactions.IsolationLevel.ReadCommitted))
+                    using (IRepository<SecondDbContext> repo = unitOfWork.CreateRepository<SecondDbContext>(/*isolationLevel: System.Transactions.IsolationLevel.ReadCommitted*/))
                     {
                         var entity = await repo.FirstOrDefaultAsync<SecondDbEntity>(f => f.CustomerName == "Customer1");
                         entity.ShouldNotBeNull();
@@ -392,7 +392,7 @@ public class UnitOfWorkTests
 
                 //instance 6 : *** Select reverted back Entity ***
                 {
-                    using (IRepository<FirstDbContext> repo = unitOfWork.CreateRepository<FirstDbContext>(isolationLevel: System.Transactions.IsolationLevel.ReadCommitted))
+                    using (IRepository<FirstDbContext> repo = unitOfWork.CreateRepository<FirstDbContext>(/*isolationLevel: System.Transactions.IsolationLevel.ReadCommitted*/))
                     {
                         var entity = await repo.FirstOrDefaultAsync<FirstDbEntity>(f => f.ProductName == "Product1");
                         entity.ShouldNotBeNull();
@@ -401,7 +401,7 @@ public class UnitOfWorkTests
 
                 //instance 7 : *** Select reverted back Entity ***
                 {
-                    using (IRepository<SecondDbContext> repo = unitOfWork.CreateRepository<SecondDbContext>(isolationLevel: System.Transactions.IsolationLevel.ReadCommitted))
+                    using (IRepository<SecondDbContext> repo = unitOfWork.CreateRepository<SecondDbContext>(/*isolationLevel: System.Transactions.IsolationLevel.ReadCommitted*/))
                     {
                         var entity = await repo.FirstOrDefaultAsync<SecondDbEntity>(f => f.CustomerName == "Customer1");
                         entity.ShouldNotBeNull();
@@ -410,7 +410,7 @@ public class UnitOfWorkTests
 
                 //instance 8 : Try-Select discarded Entity changes
                 {
-                    using (IRepository<FirstDbContext> repo = unitOfWork.CreateRepository<FirstDbContext>(isolationLevel: System.Transactions.IsolationLevel.ReadCommitted))
+                    using (IRepository<FirstDbContext> repo = unitOfWork.CreateRepository<FirstDbContext>(/*isolationLevel: System.Transactions.IsolationLevel.ReadCommitted*/))
                     {
                         var entity = await repo.FirstOrDefaultAsync<FirstDbEntity>(f => f.ProductName == "Product1Updated");
                         entity.ShouldBeNull();
@@ -419,7 +419,7 @@ public class UnitOfWorkTests
 
                 //instance 9 : Try-Select discarded Entity changes
                 {
-                    using (IRepository<SecondDbContext> repo = unitOfWork.CreateRepository<SecondDbContext>(isolationLevel: System.Transactions.IsolationLevel.ReadCommitted))
+                    using (IRepository<SecondDbContext> repo = unitOfWork.CreateRepository<SecondDbContext>(/*isolationLevel: System.Transactions.IsolationLevel.ReadCommitted*/))
                     {
                         var entity = await repo.FirstOrDefaultAsync<SecondDbEntity>(f => f.CustomerName == null);
                         entity.ShouldBeNull();

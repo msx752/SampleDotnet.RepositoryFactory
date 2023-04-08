@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
 
 namespace SampleDotnet.RepositoryFactory;
 
@@ -13,6 +14,7 @@ internal abstract class RepositoryBase : IRepository
 
     private readonly DbContext _context;
     internal readonly ConcurrentDictionary<string, IQueryable> cachedDbSets = new();
+    private bool disposedValue;
 
     protected RepositoryBase(DbContext context)
     {
@@ -33,12 +35,6 @@ internal abstract class RepositoryBase : IRepository
         _context.RemoveRange(entities);
     }
 
-    public void Dispose()
-    {
-        cachedDbSets.Clear();
-        GC.SuppressFinalize(this);
-    }
-
     public virtual void Update(object entity)
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
@@ -49,5 +45,25 @@ internal abstract class RepositoryBase : IRepository
     public virtual void UpdateRange(params object[] entities)
     {
         _context.UpdateRange(entities.Select(f => funcUpdatedAt(f)));
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                cachedDbSets.Clear();
+            }
+
+            disposedValue = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
