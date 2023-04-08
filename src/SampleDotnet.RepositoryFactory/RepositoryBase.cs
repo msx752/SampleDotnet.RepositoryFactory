@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
 
 namespace SampleDotnet.RepositoryFactory;
 
@@ -11,15 +12,16 @@ internal abstract class RepositoryBase : IRepository
         return entity;
     });
 
-    private DbContext context;
+    private readonly DbContext _context;
     internal readonly ConcurrentDictionary<string, IQueryable> _cachedDbSets = new();
+    private bool disposedValue;
 
     protected RepositoryBase(DbContext context)
     {
-        this.context = context;
+        this._context = context;
     }
 
-    public DbContext DbContext => context;
+    public DbContext CurrentDbContext => _context;
 
     public virtual void Delete(object entity)
     {
@@ -30,13 +32,7 @@ internal abstract class RepositoryBase : IRepository
 
     public virtual void DeleteRange(params object[] entities)
     {
-        context.RemoveRange(entities);
-    }
-
-    public void Dispose()
-    {
-        _cachedDbSets.Clear();
-        GC.SuppressFinalize(this);
+        _context.RemoveRange(entities);
     }
 
     public virtual void Update(object entity)
@@ -48,17 +44,26 @@ internal abstract class RepositoryBase : IRepository
 
     public virtual void UpdateRange(params object[] entities)
     {
-        context.UpdateRange(entities.Select(f => _funcUpdatedAt(f)));
+        _context.UpdateRange(entities.Select(f => _funcUpdatedAt(f)));
     }
 
-    public abstract DbContext CreateDbContext();
-
-    public DbContext RefreshDbContext()
+    protected virtual void Dispose(bool disposing)
     {
-        try { context.Dispose(); } catch { }
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                _cachedDbSets.Clear();
+            }
 
-        context = CreateDbContext();
+            disposedValue = true;
+        }
+    }
 
-        return context;
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
