@@ -1,14 +1,10 @@
-﻿namespace SampleDotnet.RepositoryFactory.Interfaces;
+﻿using Microsoft.EntityFrameworkCore.Infrastructure;
+
+namespace SampleDotnet.RepositoryFactory.Interfaces;
 
 public interface IRepository : IDisposable
 {
-    DbContextId CurrentContextId => DbContext.ContextId;
-
-    DatabaseFacade Database => DbContext.Database;
-
-    ChangeTracker ChangeTracker => DbContext.ChangeTracker;
-
-    DbContext DbContext { get; }
+    DatabaseFacade Database { get; }
 
     void Delete(object entity);
 
@@ -63,6 +59,4 @@ public interface IRepository<TDbContext> : IRepository
     void Update<T>(IEnumerable<T> entities) where T : class;
 
     IQueryable<T> Where<T>(Expression<Func<T, bool>> predicate) where T : class;
-
-    Task<List<T>> WhereWithTransactionScopeAsync<T>(Expression<Func<T, bool>> predicate) where T : class;
 }
