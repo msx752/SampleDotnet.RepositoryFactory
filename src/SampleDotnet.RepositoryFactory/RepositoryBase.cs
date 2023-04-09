@@ -19,6 +19,8 @@ internal abstract class RepositoryBase : IRepository
 
     public DatabaseFacade Database => _context.Database;
 
+    public ChangeTracker ChangeTracker => _context.ChangeTracker;
+
     protected RepositoryBase(DbContext context)
     {
         this._context = context;
