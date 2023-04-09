@@ -31,8 +31,8 @@
 		<ContinuousIntegrationBuild>True</ContinuousIntegrationBuild>
 		<EmbedUntrackedSources>True</EmbedUntrackedSources>
 		<Copyright>Copyright 2023</Copyright>
-		<AssemblyVersion>3.0.1</AssemblyVersion>
-		<Version>3.0.1</Version>
+		<AssemblyVersion>3.0.2</AssemblyVersion>
+		<Version>3.0.2</Version>
 	</PropertyGroup>
 
 	<ItemGroup>
