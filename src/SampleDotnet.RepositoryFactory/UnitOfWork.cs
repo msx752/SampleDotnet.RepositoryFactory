@@ -1,6 +1,4 @@
-﻿using System.Collections.Concurrent;
-
-namespace SampleDotnet.RepositoryFactory;
+﻿namespace SampleDotnet.RepositoryFactory;
 
 internal class UnitOfWork : IUnitOfWork
 {
@@ -44,47 +42,71 @@ internal class UnitOfWork : IUnitOfWork
         return this.SaveChangesAsync().ConfigureAwait(false).GetAwaiter().GetResult();
     }
 
-    public async Task<bool> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public Task<bool> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        DbContext? thrownExceptionDbContext = null;
-        await _semaphoreSlim.WaitAsync(cancellationToken);
-        try
+        return Task.Run(async () =>
         {
-            var cached = _dbContextPool.ToArray();
-            foreach (var dbContext in cached)
+            DbContext? thrownExceptionDbContext = null;
+            await _semaphoreSlim.WaitAsync(cancellationToken);
+            try
             {
-                try
+                var cached = _dbContextPool.ToArray();
+                var successfullyCommitedConnectionCount = 0;
+                foreach (var dbContext in cached)
                 {
-                    if (!dbContext.ChangeTracker.AutoDetectChangesEnabled)
-                        dbContext.ChangeTracker.DetectChanges();
-                    await dbContext.SaveChangesAsync(false, cancellationToken);
-                }
-                catch
-                {
-                    thrownExceptionDbContext = dbContext;
-                    foreach (var context in cached)
+                    try
                     {
-                        await context.RollbackChangesAsync(false, cancellationToken);
+                        if (!dbContext.ChangeTracker.AutoDetectChangesEnabled)
+                            dbContext.ChangeTracker.DetectChanges();
+
+                        if (dbContext.ChangeTracker.HasChanges())
+                            await dbContext.SaveChangesAsync(false, cancellationToken);
+
+                        successfullyCommitedConnectionCount++;
                     }
-                    throw;
+                    catch
+                    {
+                        thrownExceptionDbContext = dbContext;
+
+                        try
+                        {
+                            Parallel.For(0, successfullyCommitedConnectionCount, new ParallelOptions() { MaxDegreeOfParallelism = 1, CancellationToken = cancellationToken }, async (i) =>
+                            {
+                                await cached[i].RollbackChangesAsync(false, cancellationToken);
+                            });
+                        }
+                        catch (Exception e)
+                        {
+                            throw new RollbackException(e.Message, e);
+                        }
+                        throw;
+                    }
+                }
+
+                for (int i = 0; i < cached.Length; i++)
+                {
+                    cached[i].ChangeTracker.AcceptAllChanges();
                 }
             }
-
-            for (int i = 0; i < cached.Length; i++)
+            catch (RollbackException e)
             {
-                cached[i].ChangeTracker.AcceptAllChanges();
+                throw new RollbackException("Rollback halt and recovering not succeed couldn't turned to previous version, this is crucial problem!", e);
             }
-        }
-        catch (Exception e)
-        {
-            SaveChangesException ??= new(thrownExceptionDbContext, e);
-            throw;
-        }
-        finally
-        {
-            _semaphoreSlim.Release();
-        }
-        return true;
+            catch (Exception e) when (e is DbUpdateConcurrencyException || e is DbUpdateException)
+            {
+                SaveChangesException ??= new(thrownExceptionDbContext, e);
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }
+            return true;
+        });
     }
 
     protected virtual void Dispose(bool disposing)

@@ -45,17 +45,4 @@
             }
         }
     }
-
-    internal static void SilentDbContextDispose(this DbContext dbContext, bool acceptAllChangesBeforeDisposing = false)
-    {
-        if (acceptAllChangesBeforeDisposing)
-
-            try
-            {
-                //dbContext.Dispose();
-            }
-            catch (Exception e)
-            {
-            }
-    }
 }

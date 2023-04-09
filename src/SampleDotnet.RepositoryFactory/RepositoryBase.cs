@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Collections.Concurrent;
+﻿using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace SampleDotnet.RepositoryFactory;
 
@@ -13,36 +12,38 @@ internal abstract class RepositoryBase : IRepository
     });
 
     private readonly DbContext _context;
-    internal readonly ConcurrentDictionary<string, IQueryable> _cachedDbSets = new();
+    private readonly ConcurrentDictionary<string, IQueryable> _cachedDbSets = new();
     private bool disposedValue;
+
+    internal DbContext DbContext => _context;
+
+    public DatabaseFacade Database => _context.Database;
 
     protected RepositoryBase(DbContext context)
     {
         this._context = context;
     }
 
-    public DbContext DbContext => _context;
-
-    public virtual void Delete(object entity)
+    public void Delete(object entity)
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
 
         DeleteRange(entity);
     }
 
-    public virtual void DeleteRange(params object[] entities)
+    public void DeleteRange(params object[] entities)
     {
         _context.RemoveRange(entities);
     }
 
-    public virtual void Update(object entity)
+    public void Update(object entity)
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
 
         UpdateRange(entity);
     }
 
-    public virtual void UpdateRange(params object[] entities)
+    public void UpdateRange(params object[] entities)
     {
         _context.UpdateRange(entities.Select(f => _funcUpdatedAt(f)));
     }
@@ -58,6 +59,11 @@ internal abstract class RepositoryBase : IRepository
 
             disposedValue = true;
         }
+    }
+
+    internal DbSet<T> CachedDbSet<T>() where T : class
+    {
+        return (DbSet<T>)_cachedDbSets.GetOrAdd(typeof(T).FullName, DbContext.Set<T>());
     }
 
     public void Dispose()
