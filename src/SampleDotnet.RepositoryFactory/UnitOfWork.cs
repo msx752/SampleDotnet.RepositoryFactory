@@ -70,10 +70,15 @@ internal class UnitOfWork : IUnitOfWork
 
                         try
                         {
-                            Parallel.For(0, successfullyCommitedConnectionCount, new ParallelOptions() { MaxDegreeOfParallelism = 1, CancellationToken = cancellationToken }, async (i) =>
+                            var orderedCached = cached.Take(successfullyCommitedConnectionCount).GroupBy(f => f.ToString()).ToList();
+                            Parallel.ForEach(orderedCached, new ParallelOptions() { MaxDegreeOfParallelism = 3, CancellationToken = cancellationToken }, (cache) =>
                             {
-                                await cached[i].RollbackChangesAsync(false, cancellationToken);
+                                Parallel.For(0, orderedCached.Count, new ParallelOptions() { MaxDegreeOfParallelism = 1, CancellationToken = cancellationToken }, async (i) =>
+                                {
+                                    await cache.ElementAt(i).RollbackChangesAsync(false, cancellationToken);
+                                });
                             });
+                            cached[successfullyCommitedConnectionCount].ChangeTracker.Clear();
                         }
                         catch (Exception e)
                         {

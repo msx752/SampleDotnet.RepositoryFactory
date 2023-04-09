@@ -425,6 +425,9 @@ public class UnitOfWorkTests
                         entity.ShouldBeNull();
                     }
                 }
+
+                //should commit nothing and must be successfully finish
+                await unitOfWork.SaveChangesAsync(cancellationTokenSource.Token);
             }
         }
     }

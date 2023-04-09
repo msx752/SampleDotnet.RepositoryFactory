@@ -6,6 +6,8 @@ public interface IRepository : IDisposable
 {
     DatabaseFacade Database { get; }
 
+    ChangeTracker ChangeTracker { get; }
+
     void Delete(object entity);
 
     void DeleteRange(params object[] entities);
