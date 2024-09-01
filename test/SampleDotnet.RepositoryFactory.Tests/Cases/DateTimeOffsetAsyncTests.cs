@@ -1,9 +1,31 @@
-﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases;
+﻿using DotNet.Testcontainers.Builders;
+using SampleDotnet.RepositoryFactory.Tests.TestModels.DbContexts;
+using Testcontainers.MsSql;
 
-public class DateTimeOffsetAsyncTests
+namespace SampleDotnet.RepositoryFactory.Tests.Cases;
+
+public class DateTimeOffsetAsyncTests : IAsyncLifetime
 {
+    private readonly MsSqlContainer _sqlContainer;
+
     public DateTimeOffsetAsyncTests()
     {
+        _sqlContainer = new MsSqlBuilder()
+            .WithPassword("Admin123!")
+            .WithCleanUp(true)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))
+            .Build();
+    }
+
+    public async Task InitializeAsync()
+    {
+        await _sqlContainer.StartAsync();
+    }
+
+    public async Task DisposeAsync()
+    {
+        await _sqlContainer.StopAsync();
+        await _sqlContainer.DisposeAsync();
     }
 
     [Fact]
@@ -13,30 +35,45 @@ public class DateTimeOffsetAsyncTests
         {
             services.AddDbContextFactoryWithUnitOfWork<TestApplicationDbContext>(options =>
             {
-                options.UseInMemoryDatabase("Case_set_CreatedAt_DateTimeOffsetAsync");
+                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                cnnBuilder.InitialCatalog = "Case_set_CreatedAt_DateTimeOffsetAsync";
+                cnnBuilder.TrustServerCertificate = true;
+                cnnBuilder.MultipleActiveResultSets = true;
+                cnnBuilder.ConnectRetryCount = 5;
+                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
+                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
+                //options.UseInMemoryDatabase("Case_set_CreatedAt_DateTimeOffsetAsync");
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
         });
 
-        IHost b = host.Build();
-
-        //scope1
-        using (IServiceScope scope = b.Services.CreateScope())
-        using (var cancellationTokenSource = new CancellationTokenSource())
+        using (IHost build = host.Build())
         {
-            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
+            //scope1
+            using (IServiceScope scope = build.Services.CreateScope())
+            using (var cancellationTokenSource = new CancellationTokenSource())
             {
-                TestUserEntity userEntity = new();
-                userEntity.Name = "TestName";
-                userEntity.Surname = "TestSurname";
+                var testApplicationDbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
+                using (var context = testApplicationDbContextFactory.CreateDbContext())
+                {
+                    context.Database.EnsureCreated();
+                    await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();
+                }
 
-                await repo.InsertAsync(userEntity, cancellationTokenSource.Token);
+                var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
+                {
+                    TestUserEntity userEntity = new();
+                    userEntity.Name = "TestName";
+                    userEntity.Surname = "TestSurname";
 
-                userEntity.CreatedAt.ShouldNotBeNull();
+                    await repo.InsertAsync(userEntity, cancellationTokenSource.Token);
+
+                    userEntity.CreatedAt.ShouldNotBeNull();
+                }
+                await uow.SaveChangesAsync(cancellationTokenSource.Token);
             }
-            await uow.SaveChangesAsync(cancellationTokenSource.Token);
         }
     }
 
@@ -47,54 +84,70 @@ public class DateTimeOffsetAsyncTests
         {
             services.AddDbContextFactoryWithUnitOfWork<TestApplicationDbContext>(options =>
             {
-                options.UseInMemoryDatabase("Case_set_UpdatedAt_DateTimeOffsetAsync");
+                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                cnnBuilder.InitialCatalog = "Case_set_UpdatedAt_DateTimeOffsetAsync";
+                cnnBuilder.TrustServerCertificate = true;
+                cnnBuilder.MultipleActiveResultSets = true;
+                cnnBuilder.ConnectRetryCount = 5;
+                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
+                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
+                //options.UseInMemoryDatabase("Case_set_UpdatedAt_DateTimeOffsetAsync");
+                options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
         });
 
-        IHost b = host.Build();
-
-        //scope1
-        using (IServiceScope scope = b.Services.CreateScope())
-        using (var cancellationTokenSource = new CancellationTokenSource())
+        using (IHost build = host.Build())
         {
-            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
+            var testApplicationDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
+            using (var context = testApplicationDbContextFactory.CreateDbContext())
             {
-                TestUserEntity userEntity = new();
-                userEntity.Name = "TestName";
-                userEntity.Surname = "TestSurname";
-
-                userEntity.CreatedAt.ShouldBeNull();
-                userEntity.UpdatedAt.ShouldBeNull();
-
-                await repo.InsertAsync(userEntity, cancellationTokenSource.Token);
-
-                userEntity.CreatedAt.ShouldNotBeNull();
-                userEntity.UpdatedAt.ShouldBeNull();
+                context.Database.EnsureCreated();
+                await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();
             }
-            await uow.SaveChangesAsync(cancellationTokenSource.Token);
-        }
 
-        //scope2
-        using (IServiceScope scope = b.Services.CreateScope())
-        using (var cancellationTokenSource = new CancellationTokenSource())
-        {
-            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
+            //scope1
+            using (IServiceScope scope = build.Services.CreateScope())
+            using (var cancellationTokenSource = new CancellationTokenSource())
             {
-                TestUserEntity? userEntity = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == "TestName" && f.Surname == "TestSurname", cancellationTokenSource.Token);
+                var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
+                {
+                    TestUserEntity userEntity = new();
+                    userEntity.Name = "TestName";
+                    userEntity.Surname = "TestSurname";
 
-                userEntity.ShouldNotBeNull();
-                userEntity.CreatedAt.ShouldNotBeNull();
-                userEntity.UpdatedAt.ShouldBeNull();
+                    userEntity.CreatedAt.ShouldBeNull();
+                    userEntity.UpdatedAt.ShouldBeNull();
 
-                repo.Update(userEntity);
+                    await repo.InsertAsync(userEntity, cancellationTokenSource.Token);
 
-                userEntity.CreatedAt.ShouldNotBeNull();
-                userEntity.UpdatedAt.ShouldNotBeNull();
+                    userEntity.CreatedAt.ShouldNotBeNull();
+                    userEntity.UpdatedAt.ShouldBeNull();
+                }
+                await uow.SaveChangesAsync(cancellationTokenSource.Token);
             }
-            await uow.SaveChangesAsync(cancellationTokenSource.Token);
+
+            //scope2
+            using (IServiceScope scope = build.Services.CreateScope())
+            using (var cancellationTokenSource = new CancellationTokenSource())
+            {
+                var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
+                {
+                    TestUserEntity? userEntity = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == "TestName" && f.Surname == "TestSurname", cancellationTokenSource.Token);
+
+                    userEntity.ShouldNotBeNull();
+                    userEntity.CreatedAt.ShouldNotBeNull();
+                    userEntity.UpdatedAt.ShouldBeNull();
+
+                    repo.Update(userEntity);
+
+                    userEntity.CreatedAt.ShouldNotBeNull();
+                    userEntity.UpdatedAt.ShouldNotBeNull();
+                }
+                await uow.SaveChangesAsync(cancellationTokenSource.Token);
+            }
         }
     }
 }

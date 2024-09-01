@@ -1,4 +1,4 @@
-﻿namespace SampleDotnet.RepositoryFactory.Tests;
+﻿namespace SampleDotnet.RepositoryFactory.Tests.TestModels.DbContexts;
 
 public class TestApplicationDbContext : DbContext
 {

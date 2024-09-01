@@ -1,97 +1,150 @@
-﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases;
+﻿using DotNet.Testcontainers.Builders;
+using SampleDotnet.RepositoryFactory.Tests.TestModels.DbContexts;
+using Testcontainers.MsSql;
 
-public class DateTimeOffsetTests
+namespace SampleDotnet.RepositoryFactory.Tests.Cases;
+
+public class DateTimeOffsetTests : IAsyncLifetime
 {
+    private readonly MsSqlContainer _sqlContainer;
+
     public DateTimeOffsetTests()
     {
+        _sqlContainer = new MsSqlBuilder()
+            .WithPassword("Admin123!")  // Set the password for the SQL Server.
+            .WithCleanUp(true)        // automatically clean up the container.
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))  // Wait strategy to ensure SQL Server is ready.
+            .Build();  // Build the container.
+    }
+
+    public async Task InitializeAsync()
+    {
+        await _sqlContainer.StartAsync();
+    }
+
+    public async Task DisposeAsync()
+    {
+        await _sqlContainer.StopAsync();
+        await _sqlContainer.DisposeAsync();
     }
 
     [Fact]
-    public void Case_set_CreatedAt_DateTimeOffset()
+    public async void Case_set_CreatedAt_DateTimeOffset()
     {
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
             services.AddDbContextFactoryWithUnitOfWork<TestApplicationDbContext>(options =>
             {
-                options.UseInMemoryDatabase("Case_set_CreatedAt_DateTimeOffset");
+                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                cnnBuilder.InitialCatalog = "Case_set_CreatedAt_DateTimeOffset";
+                cnnBuilder.TrustServerCertificate = true;
+                cnnBuilder.MultipleActiveResultSets = true;
+                cnnBuilder.ConnectRetryCount = 5;
+                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
+                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
+                //options.UseInMemoryDatabase("Case_set_UpdatedAt_DateTimeOffsetAsync");
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
         });
 
-        IHost b = host.Build();
-
-        //scope1
-        using (IServiceScope scope = b.Services.CreateScope())
+        using (IHost build = host.Build())
         {
-            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
+            var testApplicationDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
+            using (var context = testApplicationDbContextFactory.CreateDbContext())
             {
-                TestUserEntity userEntity = new();
-                userEntity.Name = "TestName";
-                userEntity.Surname = "TestSurname";
-
-                repo.Insert(userEntity);
-
-                userEntity.CreatedAt.ShouldNotBeNull();
+                context.Database.EnsureCreated();
+                await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();
             }
-            uow.SaveChanges();
+
+            //scope1
+            using (IServiceScope scope = build.Services.CreateScope())
+            {
+                var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
+                {
+                    TestUserEntity userEntity = new();
+                    userEntity.Name = "TestName";
+                    userEntity.Surname = "TestSurname";
+
+                    repo.Insert(userEntity);
+
+                    userEntity.CreatedAt.ShouldNotBeNull();
+                }
+                uow.SaveChanges();
+            }
         }
     }
 
     [Fact]
-    public void Case_set_UpdatedAt_DateTimeOffset()
+    public async Task Case_set_UpdatedAt_DateTimeOffset()
     {
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
             services.AddDbContextFactoryWithUnitOfWork<TestApplicationDbContext>(options =>
             {
-                options.UseInMemoryDatabase("Case_set_UpdatedAt_DateTimeOffset");
+                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                cnnBuilder.InitialCatalog = "Case_set_UpdatedAt_DateTimeOffset";
+                cnnBuilder.TrustServerCertificate = true;
+                cnnBuilder.MultipleActiveResultSets = true;
+                cnnBuilder.ConnectRetryCount = 5;
+                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
+                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
+                //options.UseInMemoryDatabase("Case_set_UpdatedAt_DateTimeOffsetAsync");
+                options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
         });
 
-        IHost b = host.Build();
-
-        //scope1
-        using (IServiceScope scope = b.Services.CreateScope())
+        using (IHost build = host.Build())
         {
-            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
+            var testApplicationDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
+            using (var context = testApplicationDbContextFactory.CreateDbContext())
             {
-                TestUserEntity userEntity = new();
-                userEntity.Name = "TestName";
-                userEntity.Surname = "TestSurname";
-
-                userEntity.CreatedAt.ShouldBeNull();
-                userEntity.UpdatedAt.ShouldBeNull();
-
-                repo.Insert(userEntity);
-
-                userEntity.CreatedAt.ShouldNotBeNull();
-                userEntity.UpdatedAt.ShouldBeNull();
+                context.Database.EnsureCreated();
+                await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();
             }
-            uow.SaveChanges();
-        }
 
-        //scope2
-        using (IServiceScope scope = b.Services.CreateScope())
-        {
-            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
+            //scope1
+            using (IServiceScope scope = build.Services.CreateScope())
             {
-                TestUserEntity? userEntity = repo.FirstOrDefault<TestUserEntity>(f => f.Name == "TestName" && f.Surname == "TestSurname");
+                var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
+                {
+                    TestUserEntity userEntity = new();
+                    userEntity.Name = "TestName";
+                    userEntity.Surname = "TestSurname";
 
-                userEntity.ShouldNotBeNull();
-                userEntity.CreatedAt.ShouldNotBeNull();
-                userEntity.UpdatedAt.ShouldBeNull();
+                    userEntity.CreatedAt.ShouldBeNull();
+                    userEntity.UpdatedAt.ShouldBeNull();
 
-                repo.Update(userEntity);
+                    repo.Insert(userEntity);
 
-                userEntity.CreatedAt.ShouldNotBeNull();
-                userEntity.UpdatedAt.ShouldNotBeNull();
+                    userEntity.CreatedAt.ShouldNotBeNull();
+                    userEntity.UpdatedAt.ShouldBeNull();
+                }
+                uow.SaveChanges();
             }
-            uow.SaveChanges();
+
+            //scope2
+            using (IServiceScope scope = build.Services.CreateScope())
+            {
+                var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
+                {
+                    TestUserEntity? userEntity = repo.FirstOrDefault<TestUserEntity>(f => f.Name == "TestName" && f.Surname == "TestSurname");
+
+                    userEntity.ShouldNotBeNull();
+                    userEntity.CreatedAt.ShouldNotBeNull();
+                    userEntity.UpdatedAt.ShouldBeNull();
+
+                    repo.Update(userEntity);
+
+                    userEntity.CreatedAt.ShouldNotBeNull();
+                    userEntity.UpdatedAt.ShouldNotBeNull();
+                }
+                uow.SaveChanges();
+            }
         }
     }
 }

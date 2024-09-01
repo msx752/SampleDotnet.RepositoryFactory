@@ -1,4 +1,4 @@
-﻿namespace SampleDotnet.RepositoryFactory.Tests.Models;
+﻿namespace SampleDotnet.RepositoryFactory.Tests.TestModels.Entities;
 
 [Table("TestUserEntity")]
 public class TestUserEntity : IHasDateTimeOffset
