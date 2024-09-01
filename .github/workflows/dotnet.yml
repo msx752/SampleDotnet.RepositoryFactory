@@ -37,7 +37,7 @@ jobs:
 
     - name: Test
       env:
-        DOCKER_HOST: tcp://localhost:2375  # Ensure Docker is accessible
+        DOCKER_HOST: tcp://localhost:2375
       run: dotnet test test/SampleDotnet.RepositoryFactory.Tests/SampleDotnet.RepositoryFactory.Tests.csproj --no-restore --verbosity normal
 
     - name: Publish
