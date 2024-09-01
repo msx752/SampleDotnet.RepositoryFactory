@@ -73,7 +73,7 @@ internal class UnitOfWork : IUnitOfWork
                             var orderedCached = cached.Take(successfullyCommitedConnectionCount).GroupBy(f => f.ToString()).ToList();
                             Parallel.ForEach(orderedCached, new ParallelOptions() { MaxDegreeOfParallelism = 3, CancellationToken = cancellationToken }, (cache) =>
                             {
-                                Parallel.For(0, orderedCached.Count, new ParallelOptions() { MaxDegreeOfParallelism = 1, CancellationToken = cancellationToken }, async (i) =>
+                                Parallel.For(0, cache.Count(), new ParallelOptions() { MaxDegreeOfParallelism = 1, CancellationToken = cancellationToken }, async (i) =>
                                 {
                                     await cache.ElementAt(i).RollbackChangesAsync(false, cancellationToken);
                                 });
