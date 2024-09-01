@@ -59,7 +59,7 @@ public class DateTimeOffsetAsyncTests : IAsyncLifetime
                 using (var context = testApplicationDbContextFactory.CreateDbContext())
                 {
                     context.Database.EnsureCreated();
-                    await context.CleanUpTableRecordAsync();
+                    await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();
                 }
 
                 var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
@@ -104,7 +104,7 @@ public class DateTimeOffsetAsyncTests : IAsyncLifetime
             using (var context = testApplicationDbContextFactory.CreateDbContext())
             {
                 context.Database.EnsureCreated();
-                await context.CleanUpTableRecordAsync();
+                await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();
             }
 
             //scope1

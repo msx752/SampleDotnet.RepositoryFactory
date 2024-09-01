@@ -53,7 +53,7 @@ namespace SampleDotnet.RepositoryFactory.Tests.Cases
                 using (var context = testApplicationDbContextFactory.CreateDbContext())
                 {
                     context.Database.EnsureCreated();
-                    await context.CleanUpTableRecordAsync();
+                    await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();
                 }
 
                 //request scope
@@ -112,7 +112,7 @@ namespace SampleDotnet.RepositoryFactory.Tests.Cases
                 using (var context = testApplicationDbContextFactory.CreateDbContext())
                 {
                     context.Database.EnsureCreated();
-                    await context.CleanUpTableRecordAsync();
+                    await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();
                 }
 
 

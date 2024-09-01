@@ -9,7 +9,7 @@ namespace SampleDotnet.RepositoryFactory.Tests
 {
     public static class DbContextExtensions
     {
-        public static async Task CleanUpTableRecordAsync(this DbContext dbContext)
+        public static async Task CLEAN_TABLES_DO_NOT_USE_PRODUCTION(this DbContext dbContext)
         {
             using var connection = new SqlConnection(dbContext.Database.GetConnectionString());
             await connection.OpenAsync().ConfigureAwait(false);

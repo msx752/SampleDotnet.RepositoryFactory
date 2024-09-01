@@ -81,7 +81,7 @@ public class UnitOfWorkTests : IAsyncLifetime
             using (var context = firstDbContextFactory.CreateDbContext())
             {
                 context.Database.EnsureCreated();  // Ensure the database for FirstDbContext is created.
-                await context.CleanUpTableRecordAsync();  // Clean up table records in FirstDbContext.
+                await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();  // Clean up table records in FirstDbContext.
             }
 
             // Ensure SecondDbContext database is created and clean up any existing data.
@@ -89,7 +89,7 @@ public class UnitOfWorkTests : IAsyncLifetime
             using (var context = secondDbContextFactory.CreateDbContext())
             {
                 context.Database.EnsureCreated();  // Ensure the database for SecondDbContext is created.
-                await context.CleanUpTableRecordAsync();  // Clean up table records in SecondDbContext.
+                await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();  // Clean up table records in SecondDbContext.
             }
 
             // Begin a new request scope for dependency injection.
@@ -262,7 +262,7 @@ public class UnitOfWorkTests : IAsyncLifetime
             using (var context = firstDbContextFactory.CreateDbContext())
             {
                 context.Database.EnsureCreated();  // Ensure the database for TestApplicationDbContext is created.
-                await context.CleanUpTableRecordAsync();  // Clean up table records in TestApplicationDbContext.
+                await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();  // Clean up table records in TestApplicationDbContext.
             }
 
             // Begin a new request scope for dependency injection.
@@ -339,7 +339,7 @@ public class UnitOfWorkTests : IAsyncLifetime
             using (var context = testApplicationDbContextFactory.CreateDbContext())
             {
                 context.Database.EnsureCreated();  // Ensure the database is created.
-                await context.CleanUpTableRecordAsync();  // Clean up any existing data.
+                await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();  // Clean up any existing data.
             }
 
             // Begin a new request scope for dependency injection.
@@ -468,7 +468,7 @@ public class UnitOfWorkTests : IAsyncLifetime
             using (var context = firstDbContextFactory.CreateDbContext())
             {
                 context.Database.EnsureCreated();  // Ensure the database for FirstDbContext is created.
-                await context.CleanUpTableRecordAsync();  // Clean up table records in FirstDbContext.
+                await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();  // Clean up table records in FirstDbContext.
             }
 
             // Ensure SecondDbContext database is created and clean up any existing data.
@@ -476,7 +476,7 @@ public class UnitOfWorkTests : IAsyncLifetime
             using (var context = secondDbContextFactory.CreateDbContext())
             {
                 context.Database.EnsureCreated();  // Ensure the database for SecondDbContext is created.
-                await context.CleanUpTableRecordAsync();  // Clean up table records in SecondDbContext.
+                await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();  // Clean up table records in SecondDbContext.
             }
 
             // Begin a new request scope for dependency injection.
@@ -621,14 +621,14 @@ public class UnitOfWorkTests : IAsyncLifetime
             using (var context = firstDbContextFactory.CreateDbContext())
             {
                 context.Database.EnsureCreated();
-                await context.CleanUpTableRecordAsync();
+                await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();
             }
 
             var secondDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<SecondDbContext>>();
             using (var context = secondDbContextFactory.CreateDbContext())
             {
                 context.Database.EnsureCreated();
-                await context.CleanUpTableRecordAsync();
+                await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();
             }
 
             using (IServiceScope requestScope = build.Services.CreateScope())
@@ -753,14 +753,14 @@ public class UnitOfWorkTests : IAsyncLifetime
             using (var context = firstDbContextFactory.CreateDbContext())
             {
                 context.Database.EnsureCreated();
-                await context.CleanUpTableRecordAsync();
+                await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();
             }
 
             var secondDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<SecondDbContext>>();
             using (var context = secondDbContextFactory.CreateDbContext())
             {
                 context.Database.EnsureCreated();
-                await context.CleanUpTableRecordAsync();
+                await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();
             }
 
             using (IServiceScope requestScope = build.Services.CreateScope())
