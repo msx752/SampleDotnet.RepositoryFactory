@@ -1,7 +1,34 @@
-﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases;
+﻿using DotNet.Testcontainers.Builders;
+using Microsoft.Data.SqlClient;
+using Testcontainers.MsSql;
 
-public class UnitOfWorkTests
+namespace SampleDotnet.RepositoryFactory.Tests.Cases;
+
+public class UnitOfWorkTests : IAsyncLifetime
 {
+    private readonly MsSqlContainer _sqlContainer;
+
+    public UnitOfWorkTests()
+    {
+        _sqlContainer = new MsSqlBuilder()
+            .WithPassword("Admin123!")
+            .WithCleanUp(false)
+            .WithReuse(true)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))
+            .Build();
+    }
+
+    public async Task InitializeAsync()
+    {
+        await _sqlContainer.StartAsync();
+    }
+
+    public async Task DisposeAsync()
+    {
+        await _sqlContainer.StopAsync();
+        await _sqlContainer.DisposeAsync();
+    }
+
     [Fact]
     public async Task Case_UnitOfWork_Rollback()
     {
@@ -9,103 +36,102 @@ public class UnitOfWorkTests
         {
             services.AddDbContextFactoryWithUnitOfWork<TestApplicationDbContext>(options =>
             {
-                //var cnnBuilder = new SqlConnectionStringBuilder();
-                //cnnBuilder.DataSource = "localhost,1433";
-                //cnnBuilder.InitialCatalog = "TestApplicationDb";
-                //cnnBuilder.TrustServerCertificate = true;
-                //cnnBuilder.UserID = "sa";
-                //cnnBuilder.Password = "Admin123!";
-                //cnnBuilder.MultipleActiveResultSets = true;
-                //cnnBuilder.ConnectRetryCount = 5;
-                //cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
-                //options.UseSqlServer(cnnBuilder.ToString());
-
-                options.UseInMemoryDatabase("Case_UnitOfWork_Rollback");
+                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                cnnBuilder.InitialCatalog = "Case_UnitOfWork_Rollback";
+                cnnBuilder.TrustServerCertificate = true;
+                cnnBuilder.MultipleActiveResultSets = true;
+                cnnBuilder.ConnectRetryCount = 5;
+                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
+                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
+                //options.UseInMemoryDatabase("Case_UnitOfWork_Rollback");
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
         });
 
         using (IHost build = host.Build())
-        //request scope
-        using (IServiceScope requestScope = build.Services.CreateScope())
-        using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
-        using (var cancellationTokenSource = new CancellationTokenSource())
         {
-            //var testApplicationDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
-            //using (var context = testApplicationDbContextFactory.CreateDbContext())
-            //{
-            //    context.Database.EnsureCreated();
-            //}
-
-            TestUserEntity createdEntityFromFirstInstance = null;
-
-            //instance 1 : Insert valid Entity
+            var testApplicationDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
+            using (var context = testApplicationDbContextFactory.CreateDbContext())
             {
-                using (IRepository<TestApplicationDbContext> repo = unitOfWork.CreateRepository<TestApplicationDbContext>())
-                {
-                    TestUserEntity entity = new();
-                    entity.Name = "TestName";
-                    entity.Surname = "TestSurname";
-
-                    entity.CreatedAt.ShouldBeNull();
-                    entity.UpdatedAt.ShouldBeNull();
-
-                    await repo.InsertAsync(entity, cancellationTokenSource.Token);
-
-                    entity.CreatedAt.ShouldNotBeNull();
-                    entity.UpdatedAt.ShouldBeNull();
-
-                    createdEntityFromFirstInstance = entity;
-                }
+                context.Database.EnsureCreated();
+                await context.CleanUpTableRecordAsync();
             }
 
-            //instance 2 : Try-Select non-committed Entity
+            //request scope
+            using (IServiceScope requestScope = build.Services.CreateScope())
+            using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
+            using (var cancellationTokenSource = new CancellationTokenSource())
             {
-                using (IRepository<TestApplicationDbContext> repo = unitOfWork.CreateRepository<TestApplicationDbContext>())
-                {
-                    TestUserEntity? entity = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == "TestName" && f.Surname == "TestSurname", cancellationTokenSource.Token);
+                TestUserEntity createdEntityFromFirstInstance = null;
 
-                    entity.ShouldBeNull();
+                //instance 1 : Insert valid Entity
+                {
+                    using (IRepository<TestApplicationDbContext> repo = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                    {
+                        TestUserEntity entity = new();
+                        entity.Name = "TestName";
+                        entity.Surname = "TestSurname";
+
+                        entity.CreatedAt.ShouldBeNull();
+                        entity.UpdatedAt.ShouldBeNull();
+
+                        await repo.InsertAsync(entity, cancellationTokenSource.Token);
+
+                        entity.CreatedAt.ShouldNotBeNull();
+                        entity.UpdatedAt.ShouldBeNull();
+
+                        createdEntityFromFirstInstance = entity;
+                    }
                 }
-            }
 
-            //instance 3 : Try-Update Entity's REQUIRED field to NULL which is tracked by different DbContext instance
-            {
-                using (IRepository<TestApplicationDbContext> repo = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                //instance 2 : Try-Select non-committed Entity
                 {
-                    TestUserEntity? entity = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == "TestName", cancellationTokenSource.Token);
-                    entity.ShouldBeNull();
+                    using (IRepository<TestApplicationDbContext> repo = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                    {
+                        TestUserEntity? entity = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == "TestName" && f.Surname == "TestSurname", cancellationTokenSource.Token);
 
-                    createdEntityFromFirstInstance.Name = null;
-
-                    repo.Update(createdEntityFromFirstInstance);
-
-                    createdEntityFromFirstInstance.CreatedAt.ShouldNotBeNull();
-                    createdEntityFromFirstInstance.UpdatedAt.ShouldNotBeNull();
+                        entity.ShouldBeNull();
+                    }
                 }
-            }
 
-            //rollback changes
-            await Assert.ThrowsAsync<DbUpdateException>(async () =>
-              await unitOfWork.SaveChangesAsync(cancellationTokenSource.Token));
-
-            //thrown exception details
-            unitOfWork.SaveChangesException.ShouldNotBeNull();
-            unitOfWork.IsDbConcurrencyExceptionThrown.ShouldBeFalse();
-
-            //instance 4 : *** Try-Select reverted back Entity ***
-            {
-                using (IRepository<TestApplicationDbContext> repo = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                //instance 3 : Try-Update Entity's REQUIRED field to NULL which is tracked by different DbContext instance
                 {
-                    TestUserEntity? entity = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == "TestName", cancellationTokenSource.Token);
-                    entity.ShouldBeNull();
+                    using (IRepository<TestApplicationDbContext> repo = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                    {
+                        TestUserEntity? entity = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == "TestName", cancellationTokenSource.Token);
+                        entity.ShouldBeNull();
 
-                    entity = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == null, cancellationTokenSource.Token);
-                    entity.ShouldBeNull();
+                        createdEntityFromFirstInstance.Name = null;
 
-                    var entities = repo.AsQueryable<TestUserEntity>().ToList();
-                    entities.Count.ShouldBeEquivalentTo(0);
+                        repo.Update(createdEntityFromFirstInstance);
+
+                        createdEntityFromFirstInstance.CreatedAt.ShouldNotBeNull();
+                        createdEntityFromFirstInstance.UpdatedAt.ShouldNotBeNull();
+                    }
+                }
+
+                //rollback changes
+                await Assert.ThrowsAsync<DbUpdateException>(async () =>
+                  await unitOfWork.SaveChangesAsync(cancellationTokenSource.Token));
+
+                //thrown exception details
+                unitOfWork.SaveChangesException.ShouldNotBeNull();
+                unitOfWork.IsDbConcurrencyExceptionThrown.ShouldBeFalse();
+
+                //instance 4 : *** Try-Select reverted back Entity ***
+                {
+                    using (IRepository<TestApplicationDbContext> repo = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                    {
+                        TestUserEntity? entity = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == "TestName", cancellationTokenSource.Token);
+                        entity.ShouldBeNull();
+
+                        entity = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == null, cancellationTokenSource.Token);
+                        entity.ShouldBeNull();
+
+                        var entities = repo.AsQueryable<TestUserEntity>().ToList();
+                        entities.Count.ShouldBeEquivalentTo(0);
+                    }
                 }
             }
         }
@@ -118,52 +144,46 @@ public class UnitOfWorkTests
         {
             services.AddDbContextFactoryWithUnitOfWork<FirstDbContext>(options =>
             {
-                //var cnnBuilder = new SqlConnectionStringBuilder();
-                //cnnBuilder.DataSource = "localhost,1433";
-                //cnnBuilder.InitialCatalog = "FirstDb";
-                //cnnBuilder.TrustServerCertificate = true;
-                //cnnBuilder.UserID = "sa";
-                //cnnBuilder.Password = "Admin123!";
-                //cnnBuilder.MultipleActiveResultSets = true;
-                //cnnBuilder.ConnectRetryCount = 5;
-                //cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
-                //options.UseSqlServer(cnnBuilder.ToString());
-
-                options.UseInMemoryDatabase("FirstDbContext_Case_UnitOfWork");
+                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                cnnBuilder.InitialCatalog = "FirstDbContext_Case_UnitOfWork";
+                cnnBuilder.TrustServerCertificate = true;
+                cnnBuilder.MultipleActiveResultSets = true;
+                cnnBuilder.ConnectRetryCount = 5;
+                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
+                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
+                //options.UseInMemoryDatabase("FirstDbContext_Case_UnitOfWork");
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
             services.AddDbContextFactoryWithUnitOfWork<SecondDbContext>(options =>
             {
-                //var cnnBuilder = new SqlConnectionStringBuilder();
-                //cnnBuilder.DataSource = "localhost,1433";
-                //cnnBuilder.InitialCatalog = "SecondDb";
-                //cnnBuilder.TrustServerCertificate = true;
-                //cnnBuilder.UserID = "sa";
-                //cnnBuilder.Password = "Admin123!";
-                //cnnBuilder.MultipleActiveResultSets = true;
-                //cnnBuilder.ConnectRetryCount = 5;
-                //cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
-                //options.UseSqlServer(cnnBuilder.ToString());
-
-                options.UseInMemoryDatabase("SecondDbContext_Case_UnitOfWork");
+                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                cnnBuilder.InitialCatalog = "SecondDbContext_Case_UnitOfWork";
+                cnnBuilder.TrustServerCertificate = true;
+                cnnBuilder.MultipleActiveResultSets = true;
+                cnnBuilder.ConnectRetryCount = 5;
+                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
+                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
+                //options.UseInMemoryDatabase("SecondDbContext_Case_UnitOfWork");
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
         });
         using (IHost build = host.Build())
         {
-            //var firstDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<FirstDbContext>>();
-            //using (var context = firstDbContextFactory.CreateDbContext())
-            //{
-            //    context.Database.EnsureCreated();
-            //}
+            var firstDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<FirstDbContext>>();
+            using (var context = firstDbContextFactory.CreateDbContext())
+            {
+                context.Database.EnsureCreated();
+                await context.CleanUpTableRecordAsync();
+            }
 
-            //var secondDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<SecondDbContext>>();
-            //using (var context = secondDbContextFactory.CreateDbContext())
-            //{
-            //    context.Database.EnsureCreated();
-            //}
+            var secondDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<SecondDbContext>>();
+            using (var context = secondDbContextFactory.CreateDbContext())
+            {
+                context.Database.EnsureCreated();
+                await context.CleanUpTableRecordAsync();
+            }
 
             //request scope
             using (IServiceScope requestScope = build.Services.CreateScope())
@@ -247,58 +267,52 @@ public class UnitOfWorkTests
         {
             services.AddDbContextFactoryWithUnitOfWork<FirstDbContext>(options =>
             {
-                //var cnnBuilder = new SqlConnectionStringBuilder();
-                //cnnBuilder.DataSource = "localhost,1433";
-                //cnnBuilder.InitialCatalog = "FirstDb";
-                //cnnBuilder.TrustServerCertificate = true;
-                //cnnBuilder.UserID = "sa";
-                //cnnBuilder.Password = "Admin123!";
-                //cnnBuilder.MultipleActiveResultSets = true;
-                //cnnBuilder.ConnectRetryCount = 5;
-                //cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
-                //options.UseSqlServer(cnnBuilder.ToString());
-
-                options.UseInMemoryDatabase("FirstDbContext_Case_UnitOfWork_CommitAndRollback");
+                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                cnnBuilder.InitialCatalog = "FirstDbContext_Case_UnitOfWork_CommitAndRollback";
+                cnnBuilder.TrustServerCertificate = true;
+                cnnBuilder.MultipleActiveResultSets = true;
+                cnnBuilder.ConnectRetryCount = 5;
+                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
+                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
+                //options.UseInMemoryDatabase("FirstDbContext_Case_UnitOfWork_CommitAndRollback");
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
             services.AddDbContextFactoryWithUnitOfWork<SecondDbContext>(options =>
             {
-                //var cnnBuilder = new SqlConnectionStringBuilder();
-                //cnnBuilder.DataSource = "localhost,1433";
-                //cnnBuilder.InitialCatalog = "SecondDb";
-                //cnnBuilder.TrustServerCertificate = true;
-                //cnnBuilder.UserID = "sa";
-                //cnnBuilder.Password = "Admin123!";
-                //cnnBuilder.MultipleActiveResultSets = true;
-                //cnnBuilder.ConnectRetryCount = 5;
-                //cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
-                //options.UseSqlServer(cnnBuilder.ToString());
-
-                options.UseInMemoryDatabase("SecondDbContext_Case_UnitOfWork_CommitAndRollback");
+                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                cnnBuilder.InitialCatalog = "SecondDbContext_Case_UnitOfWork_CommitAndRollback";
+                cnnBuilder.TrustServerCertificate = true;
+                cnnBuilder.MultipleActiveResultSets = true;
+                cnnBuilder.ConnectRetryCount = 5;
+                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
+                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
+                //options.UseInMemoryDatabase("SecondDbContext_Case_UnitOfWork_CommitAndRollback");
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
         });
         using (IHost build = host.Build())
         {
+            var firstDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<FirstDbContext>>();
+            using (var context = firstDbContextFactory.CreateDbContext())
+            {
+                context.Database.EnsureCreated();
+                await context.CleanUpTableRecordAsync();
+            }
+
+            var secondDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<SecondDbContext>>();
+            using (var context = secondDbContextFactory.CreateDbContext())
+            {
+                context.Database.EnsureCreated();
+                await context.CleanUpTableRecordAsync();
+            }
+
             //request scope
             using (IServiceScope requestScope = build.Services.CreateScope())
             using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
             using (var cancellationTokenSource = new CancellationTokenSource())
             {
-                //var firstDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<FirstDbContext>>();
-                //using (var context = firstDbContextFactory.CreateDbContext())
-                //{
-                //    context.Database.EnsureCreated();
-                //}
-
-                //var secondDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<SecondDbContext>>();
-                //using (var context = secondDbContextFactory.CreateDbContext())
-                //{
-                //    context.Database.EnsureCreated();
-                //}
-
                 //instance 1 : Insert valid Entity
                 {
                     using (IRepository<FirstDbContext> repo = unitOfWork.CreateRepository<FirstDbContext>())
@@ -439,60 +453,65 @@ public class UnitOfWorkTests
         {
             services.AddDbContextFactoryWithUnitOfWork<TestApplicationDbContext>(options =>
             {
-                //var cnnBuilder = new SqlConnectionStringBuilder();
-                //cnnBuilder.DataSource = "localhost,1433";
-                //cnnBuilder.InitialCatalog = "TestApplicationDb";
-                //cnnBuilder.TrustServerCertificate = true;
-                //cnnBuilder.UserID = "sa";
-                //cnnBuilder.Password = "Admin123!";
-                //cnnBuilder.MultipleActiveResultSets = true;
-                //cnnBuilder.ConnectRetryCount = 5;
-                //cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
-                //options.UseSqlServer(cnnBuilder.ToString());
-
-                options.UseInMemoryDatabase("Case_UnitOfWork_Do_Not_Skip_DetectChanges");
+                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                cnnBuilder.InitialCatalog = "Case_UnitOfWork_Do_Not_Skip_DetectChanges";
+                cnnBuilder.TrustServerCertificate = true;
+                cnnBuilder.MultipleActiveResultSets = true;
+                cnnBuilder.ConnectRetryCount = 5;
+                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
+                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
+                //options.UseInMemoryDatabase("Case_UnitOfWork_Do_Not_Skip_DetectChanges");
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
         });
 
         using (IHost build = host.Build())
-        //request scope
-        using (IServiceScope requestScope = build.Services.CreateScope())
-        using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
-        using (var cancellationTokenSource = new CancellationTokenSource())
         {
-            using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
+            var firstDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
+            using (var context = firstDbContextFactory.CreateDbContext())
             {
-                var user1 = new TestUserEntity()
-                {
-                    Name = "Name",
-                    Surname = "Surname",
-                };
-
-                user1.CreatedAt.ShouldBeNull();
-                await repository.InsertAsync(user1);
-
-                await unitOfWork.SaveChangesAsync();
+                context.Database.EnsureCreated();
+                await context.CleanUpTableRecordAsync();
             }
 
-            using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
+            //request scope
+            using (IServiceScope requestScope = build.Services.CreateScope())
+            using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
+            using (var cancellationTokenSource = new CancellationTokenSource())
             {
-                var user1 = await repository.FirstOrDefaultAsync<TestUserEntity>(f => f.Surname == "Surname");
+                using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                {
+                    var user1 = new TestUserEntity()
+                    {
+                        Name = "Name",
+                        Surname = "Surname",
+                    };
 
-                user1.ShouldNotBeNull();
-                user1.CreatedAt.ShouldNotBeNull();
+                    user1.CreatedAt.ShouldBeNull();
+                    await repository.InsertAsync(user1);
 
-                await unitOfWork.SaveChangesAsync();
+                    await unitOfWork.SaveChangesAsync();
+                }
 
-                user1.Name = "NameUpdated2";
+                using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                {
+                    var user1 = await repository.FirstOrDefaultAsync<TestUserEntity>(f => f.Surname == "Surname");
 
-                await unitOfWork.SaveChangesAsync();
+                    user1.ShouldNotBeNull();
+                    user1.CreatedAt.ShouldNotBeNull();
 
-                user1.CreatedAt.ShouldNotBeNull();
+                    await unitOfWork.SaveChangesAsync();
 
-                var user2 = await repository.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == "NameUpdated2");
-                user2.ShouldNotBeNull();
+                    user1.Name = "NameUpdated2";
+
+                    await unitOfWork.SaveChangesAsync();
+
+                    user1.CreatedAt.ShouldNotBeNull();
+
+                    var user2 = await repository.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == "NameUpdated2");
+                    user2.ShouldNotBeNull();
+                }
             }
         }
     }

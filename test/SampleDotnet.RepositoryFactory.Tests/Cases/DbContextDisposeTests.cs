@@ -1,7 +1,32 @@
-﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases
+﻿using DotNet.Testcontainers.Builders;
+using Microsoft.Data.SqlClient;
+using Testcontainers.MsSql;
+
+namespace SampleDotnet.RepositoryFactory.Tests.Cases
 {
-    public class DbContextDisposeTests
+    public class DbContextDisposeTests : IAsyncLifetime
     {
+        private readonly MsSqlContainer _sqlContainer;
+        public DbContextDisposeTests()
+        {
+            _sqlContainer = new MsSqlBuilder()
+                .WithPassword("Admin123!")
+                .WithCleanUp(false)
+                .WithReuse(true)
+                .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))
+                .Build();
+        }
+        public async Task InitializeAsync()
+        {
+            await _sqlContainer.StartAsync();
+        }
+
+        public async Task DisposeAsync()
+        {
+            await _sqlContainer.StopAsync();
+            await _sqlContainer.DisposeAsync();
+        }
+
         [Fact]
         public async Task Case_DbContext_Should_Not_Throw_ObjectDisposedException()
         {
@@ -9,50 +34,55 @@
             {
                 services.AddDbContextFactoryWithUnitOfWork<TestApplicationDbContext>(options =>
                 {
-                    //var cnnBuilder = new SqlConnectionStringBuilder();
-                    //cnnBuilder.DataSource = "localhost,1433";
-                    //cnnBuilder.InitialCatalog = "TestApplicationDb";
-                    //cnnBuilder.TrustServerCertificate = true;
-                    //cnnBuilder.UserID = "sa";
-                    //cnnBuilder.Password = "Admin123!";
-                    //cnnBuilder.MultipleActiveResultSets = true;
-                    //cnnBuilder.ConnectRetryCount = 5;
-                    //cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
-                    //options.UseSqlServer(cnnBuilder.ToString());
-
-                    options.UseInMemoryDatabase("Case_DbContext_Should_Not_Throw_ObjectDisposedException");
+                    var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                    cnnBuilder.InitialCatalog = "Case_DbContext_Should_Not_Throw_ObjectDisposedException";
+                    cnnBuilder.TrustServerCertificate = true;
+                    cnnBuilder.MultipleActiveResultSets = true;
+                    cnnBuilder.ConnectRetryCount = 5;
+                    cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
+                    options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
+                    //options.UseInMemoryDatabase("Case_set_UpdatedAt_DateTimeOffsetAsync");
                     options.EnableSensitiveDataLogging();
                     options.EnableDetailedErrors();
                 });
             });
 
             using (IHost build = host.Build())
-            //request scope
-            using (IServiceScope requestScope = build.Services.CreateScope())
-            using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
-            using (var cancellationTokenSource = new CancellationTokenSource())
-            using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
             {
-                var user1 = new TestUserEntity()
+                var testApplicationDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
+                using (var context = testApplicationDbContextFactory.CreateDbContext())
                 {
-                    Name = "Name",
-                    Surname = "Surname",
-                };
+                    context.Database.EnsureCreated();
+                    await context.CleanUpTableRecordAsync();
+                }
 
-                user1.CreatedAt.ShouldBeNull();
-                await repository.InsertAsync(user1);
+                //request scope
+                using (IServiceScope requestScope = build.Services.CreateScope())
+                using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
+                using (var cancellationTokenSource = new CancellationTokenSource())
+                using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                {
+                    var user1 = new TestUserEntity()
+                    {
+                        Name = "Name",
+                        Surname = "Surname",
+                    };
 
-                await unitOfWork.SaveChangesAsync();
+                    user1.CreatedAt.ShouldBeNull();
+                    await repository.InsertAsync(user1);
 
-                user1.CreatedAt.ShouldNotBeNull();
-                user1.UpdatedAt.ShouldBeNull();
+                    await unitOfWork.SaveChangesAsync();
 
-                user1.Name = "Name1";
-                repository.Update(user1);
+                    user1.CreatedAt.ShouldNotBeNull();
+                    user1.UpdatedAt.ShouldBeNull();
 
-                await unitOfWork.SaveChangesAsync();
+                    user1.Name = "Name1";
+                    repository.Update(user1);
 
-                user1.UpdatedAt.ShouldNotBeNull();
+                    await unitOfWork.SaveChangesAsync();
+
+                    user1.UpdatedAt.ShouldNotBeNull();
+                }
             }
         }
 
@@ -63,18 +93,14 @@
             {
                 services.AddDbContextFactoryWithUnitOfWork<TestApplicationDbContext>(options =>
                 {
-                    //var cnnBuilder = new SqlConnectionStringBuilder();
-                    //cnnBuilder.DataSource = "localhost,1433";
-                    //cnnBuilder.InitialCatalog = "TestApplicationDb";
-                    //cnnBuilder.TrustServerCertificate = true;
-                    //cnnBuilder.UserID = "sa";
-                    //cnnBuilder.Password = "Admin123!";
-                    //cnnBuilder.MultipleActiveResultSets = true;
-                    //cnnBuilder.ConnectRetryCount = 5;
-                    //cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
-                    //options.UseSqlServer(cnnBuilder.ToString());
-
-                    options.UseInMemoryDatabase("Case_Repository_Should_Not_Throw_ObjectDisposedException");
+                    var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                    cnnBuilder.InitialCatalog = "Case_Repository_Should_Not_Throw_ObjectDisposedException";
+                    cnnBuilder.TrustServerCertificate = true;
+                    cnnBuilder.MultipleActiveResultSets = true;
+                    cnnBuilder.ConnectRetryCount = 5;
+                    cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
+                    options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
+                    //options.UseInMemoryDatabase("Case_set_UpdatedAt_DateTimeOffsetAsync");
                     options.EnableSensitiveDataLogging();
                     options.EnableDetailedErrors();
                 });
@@ -82,6 +108,14 @@
 
             using (IHost build = host.Build())
             {
+                var testApplicationDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
+                using (var context = testApplicationDbContextFactory.CreateDbContext())
+                {
+                    context.Database.EnsureCreated();
+                    await context.CleanUpTableRecordAsync();
+                }
+
+
                 //request scope 1
                 using (IServiceScope requestScope = build.Services.CreateScope())
                 using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
