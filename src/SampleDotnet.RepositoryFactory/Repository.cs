@@ -35,6 +35,16 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     }
 
     /// <summary>
+    /// Returns an <see cref="IQueryable{T}"/> of the specified entity type.
+    /// </summary>
+    /// <typeparam name="T">The entity type.</typeparam>
+    /// <returns>An IQueryable of the specified entity type.</returns>
+    public IQueryable<T> AsQueryableWithNoTracking<T>() where T : class
+    {
+        return CachedDbSet<T>().AsNoTracking();
+    }
+
+    /// <summary>
     /// Deletes the specified entity from the DbContext.
     /// </summary>
     /// <typeparam name="T">The entity type.</typeparam>
@@ -43,7 +53,7 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
 
-        CachedDbSet<T>().Remove(entity);
+        base.Delete(entity);
     }
 
     /// <summary>
@@ -55,7 +65,7 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        CachedDbSet<T>().RemoveRange(entities);
+        base.DeleteRange(entities);
     }
 
     /// <summary>
@@ -227,7 +237,9 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     /// <returns>A task representing the asynchronous operation.</returns>
     public Task InsertAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T : class
     {
-        return _InternalInsertAsync(entities, cancellationToken);
+        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
+
+        return CachedDbSet<T>().AddRangeAsync(entities.Select(f => (T)_funcCreatedAt(f)), cancellationToken);
     }
 
     /// <summary>
@@ -239,7 +251,9 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     /// <returns>A task representing the asynchronous operation.</returns>
     public Task InsertAsync<T>(IEnumerable<T> entities, CancellationToken cancellationToken = default) where T : class
     {
-        return _InternalInsertAsync(entities, cancellationToken);
+        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
+
+        return CachedDbSet<T>().AddRangeAsync(entities.Select(f => (T)_funcCreatedAt(f)), cancellationToken);
     }
 
     /// <summary>
@@ -262,11 +276,6 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
         base.UpdateRange(entities);
     }
 
-    public void Update<T>(T entity) where T : class
-    {
-        base.UpdateRange(entity);
-    }
-
     /// <summary>
     /// Returns an <see cref="IQueryable{T}"/> that contains elements from the input sequence that satisfy the specified predicate.
     /// </summary>
@@ -278,19 +287,5 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
         ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
 
         return AsQueryable<T>().Where(predicate);
-    }
-
-    /// <summary>
-    /// Internal method to asynchronously insert a range of entities into the DbContext.
-    /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="entities">The entities to insert.</param>
-    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    private Task _InternalInsertAsync<T>(IEnumerable<T> entities, CancellationToken cancellationToken = default) where T : class
-    {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-
-        return CachedDbSet<T>().AddRangeAsync(entities.Select(f => (T)_funcCreatedAt(f)), cancellationToken);
     }
 }

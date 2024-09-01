@@ -34,12 +34,12 @@ internal abstract class RepositoryBase : IRepository, IDisposable
     /// <summary>
     /// Gets the <see cref="ChangeTracker"/> associated with the DbContext.
     /// </summary>
-    public ChangeTracker ChangeTracker => _context.ChangeTracker;
+    internal ChangeTracker ChangeTracker => _context.ChangeTracker;
 
     /// <summary>
     /// Gets the <see cref="DatabaseFacade"/> associated with the DbContext.
     /// </summary>
-    public DatabaseFacade Database => _context.Database;
+    internal DatabaseFacade Database => _context.Database;
 
     /// <summary>
     /// Gets the DbContext instance used by the repository.
@@ -52,7 +52,7 @@ internal abstract class RepositoryBase : IRepository, IDisposable
     public void Delete(object entity)
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
-        DeleteRange(entity);
+        _context.Remove(entity);
     }
 
     /// <summary>
@@ -82,7 +82,7 @@ internal abstract class RepositoryBase : IRepository, IDisposable
     public void Update(object entity)
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
-        UpdateRange(entity);
+        _context.Update(_funcUpdatedAt(entity));
     }
 
     /// <summary>

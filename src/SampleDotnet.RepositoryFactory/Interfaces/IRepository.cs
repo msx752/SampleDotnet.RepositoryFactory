@@ -17,15 +17,6 @@ public interface IRepository : IDisposable
     void Update(object entity);
 
     /// <summary>
-    /// Gets the <see cref="ChangeTracker"/> associated with the DbContext.
-    /// </summary>
-    ChangeTracker ChangeTracker { get; }
-
-    /// <summary>
-    /// Gets the <see cref="DatabaseFacade"/> instance associated with the DbContext.
-    /// </summary>
-    DatabaseFacade Database { get; }
-    /// <summary>
     /// Deletes a range of entities from the DbContext.
     /// </summary>
     /// <param name="entities">The entities to delete.</param>
