@@ -33,12 +33,12 @@ jobs:
       run: dotnet restore
 
     - name: Build
-      run: dotnet build -c Release
+      run: dotnet build -c Release --no-restore
 
     - name: Test
       env:
         DOCKER_HOST: tcp://localhost:2375  # Ensure Docker is accessible
-      run: dotnet test test/SampleDotnet.RepositoryFactory.Tests/SampleDotnet.RepositoryFactory.Tests.csproj --no-restore --verbosity normal
+      run: dotnet test test/SampleDotnet.RepositoryFactory.Tests/SampleDotnet.RepositoryFactory.Tests.csproj --no-build --no-restore --verbosity normal
 
     - name: Publish
       id: SampleDotnet_RepositoryFactory
