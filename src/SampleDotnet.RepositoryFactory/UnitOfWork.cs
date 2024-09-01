@@ -4,7 +4,7 @@
 /// Unit of Work class to manage multiple DbContexts and repositories.
 /// Implements the <see cref="IUnitOfWork"/> interface.
 /// </summary>
-internal class UnitOfWork : IUnitOfWork
+internal sealed class UnitOfWork : IUnitOfWork
 {
     // A pool to hold created DbContexts for the lifetime of the UnitOfWork.
     private readonly Queue<DbContext> _dbContextPool = new();

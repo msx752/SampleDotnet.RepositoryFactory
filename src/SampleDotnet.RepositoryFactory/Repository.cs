@@ -5,7 +5,7 @@
 /// Inherits from <see cref="RepositoryBase"/> and implements <see cref="IRepository{TDbContext}"/>.
 /// </summary>
 /// <typeparam name="TDbContext">The type of the DbContext.</typeparam>
-internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> where TDbContext : DbContext
+internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> where TDbContext : DbContext
 {
     // A function to set the CreatedAt property for entities implementing IHasDateTimeOffset.
     private static readonly Func<object, object> _funcCreatedAt = new((entity) =>
@@ -19,7 +19,7 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     /// Initializes a new instance of the <see cref="Repository{TDbContext}"/> class with the specified DbContext.
     /// </summary>
     /// <param name="dbContext">The DbContext instance.</param>
-    public Repository(TDbContext dbContext)
+    internal Repository(TDbContext dbContext)
         : base(dbContext)
     {
     }
