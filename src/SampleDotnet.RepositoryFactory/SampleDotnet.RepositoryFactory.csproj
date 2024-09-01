@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
 	  <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
@@ -11,7 +11,7 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<id>SampleDotnet.RepositoryFactory</id>
 		<Title>SampleDotnet.RepositoryFactory</Title>
-		<Description>EFCore UnitOfWork Pattern used on DbContextFactory</Description>
+		<Description>EFCore UnitOfWork Pattern used on DbContextFactory for the multiple DbContexts</Description>
 		<Summary></Summary>
 		<Authors>Mustafa Salih ASLIM;</Authors>
 		<PackageProjectUrl>https://github.com/msx752/SampleDotnet.RepositoryFactory</PackageProjectUrl>
@@ -21,7 +21,7 @@
 		<EnableNETAnalyzers>True</EnableNETAnalyzers>
 		<SignAssembly>False</SignAssembly>
 		<PackageIcon>wfc2.png</PackageIcon>
-		<PackageTags>dotnet net6 net7 unitofwork pattern repository factory</PackageTags>
+		<PackageTags>dotnet net6 net7 net9 unitofwork pattern repository factory multiple dbcontexts</PackageTags>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
 		<IncludeSymbols>True</IncludeSymbols>
@@ -31,8 +31,8 @@
 		<ContinuousIntegrationBuild>True</ContinuousIntegrationBuild>
 		<EmbedUntrackedSources>True</EmbedUntrackedSources>
 		<Copyright>Copyright 2023</Copyright>
-		<AssemblyVersion>3.0.2</AssemblyVersion>
-		<Version>3.0.2</Version>
+		<AssemblyVersion>3.0.3.0</AssemblyVersion>
+		<Version>3.0.3-preview1</Version>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 	</PropertyGroup>
 
