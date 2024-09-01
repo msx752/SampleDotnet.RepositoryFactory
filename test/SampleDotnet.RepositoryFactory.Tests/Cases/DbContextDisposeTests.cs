@@ -11,7 +11,7 @@ namespace SampleDotnet.RepositoryFactory.Tests.Cases
         {
             _sqlContainer = new MsSqlBuilder()
                 .WithPassword("Admin123!")
-                .WithCleanUp(false)
+                .WithCleanUp(true)
                 .WithReuse(true)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))
                 .Build();
