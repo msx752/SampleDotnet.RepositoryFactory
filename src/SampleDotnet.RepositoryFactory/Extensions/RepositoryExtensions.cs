@@ -1,4 +1,6 @@
-﻿/// <summary>
+﻿namespace SampleDotnet.RepositoryFactory;
+
+/// <summary>
 /// Extension methods for adding DbContext factory and UnitOfWork to the service collection.
 /// </summary>
 public static class RepositoryExtensions

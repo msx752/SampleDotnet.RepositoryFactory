@@ -6,3 +6,5 @@ global using SampleDotnet.RepositoryFactory.Interfaces;
 global using System.Collections.Concurrent;
 global using System.Data;
 global using System.Linq.Expressions;
+global using Microsoft.EntityFrameworkCore.Infrastructure;
+global using System.Runtime.Serialization;

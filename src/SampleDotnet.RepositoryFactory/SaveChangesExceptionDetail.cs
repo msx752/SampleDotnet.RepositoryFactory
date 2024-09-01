@@ -6,7 +6,7 @@ namespace SampleDotnet.RepositoryFactory
     /// <summary>
     /// Represents the details of an exception thrown during a SaveChanges operation in a DbContext.
     /// </summary>
-    public class SaveChangesExceptionDetail
+    public sealed class SaveChangesExceptionDetail
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="SaveChangesExceptionDetail"/> class.
