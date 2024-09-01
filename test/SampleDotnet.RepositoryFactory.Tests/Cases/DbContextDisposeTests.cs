@@ -1,5 +1,6 @@
 ﻿using DotNet.Testcontainers.Builders;
 using SampleDotnet.RepositoryFactory.Tests.TestModels.DbContexts;
+using System.Runtime.Intrinsics.X86;
 using Testcontainers.MsSql;
 
 namespace SampleDotnet.RepositoryFactory.Tests.Cases
@@ -29,14 +30,14 @@ namespace SampleDotnet.RepositoryFactory.Tests.Cases
         }
 
         [Fact]
-        public async Task Case_DbContext_Should_Not_Throw_ObjectDisposedException()
+        public async Task Case_DbContext_Should_Not_Throw_ObjectDisposedException1()
         {
             IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
             {
                 services.AddDbContextFactoryWithUnitOfWork<TestApplicationDbContext>(options =>
                 {
                     var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
-                    cnnBuilder.InitialCatalog = "Case_DbContext_Should_Not_Throw_ObjectDisposedException";
+                    cnnBuilder.InitialCatalog = "Case_DbContext_Should_Not_Throw_ObjectDisposedException1";
                     cnnBuilder.TrustServerCertificate = true;
                     cnnBuilder.MultipleActiveResultSets = true;
                     cnnBuilder.ConnectRetryCount = 5;
@@ -87,21 +88,21 @@ namespace SampleDotnet.RepositoryFactory.Tests.Cases
             }
         }
 
-        //[Fact] //The active test run was aborted. Reason: Test host process crashed
-        public async Task Case_Repository_Should_Not_Throw_ObjectDisposedException()
+        [Fact]
+        public async Task Case_Repository_Should_Not_Throw_ObjectDisposedException2()
         {
             IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
             {
                 services.AddDbContextFactoryWithUnitOfWork<TestApplicationDbContext>(options =>
                 {
                     var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
-                    cnnBuilder.InitialCatalog = "Case_Repository_Should_Not_Throw_ObjectDisposedException";
+                    cnnBuilder.InitialCatalog = "Case_Repository_Should_Not_Throw_ObjectDisposedException2";
                     cnnBuilder.TrustServerCertificate = true;
                     cnnBuilder.MultipleActiveResultSets = true;
                     cnnBuilder.ConnectRetryCount = 5;
                     cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
                     options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
-                    //options.UseInMemoryDatabase("Case_set_UpdatedAt_DateTimeOffsetAsync");
+                    //options.UseInMemoryDatabase("Case_Repository_Should_Not_Throw_ObjectDisposedException");
                     options.EnableSensitiveDataLogging();
                     options.EnableDetailedErrors();
                 });
@@ -125,7 +126,7 @@ namespace SampleDotnet.RepositoryFactory.Tests.Cases
                     {
                         var user1 = new TestUserEntity()
                         {
-                            Name = "Name",
+                            Name = "Name000",
                             Surname = "Surname",
                         };
 
@@ -142,21 +143,103 @@ namespace SampleDotnet.RepositoryFactory.Tests.Cases
                 using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
                 using (var cancellationTokenSource = new CancellationTokenSource())
                 {
-                    Parallel.For(0, 100, new ParallelOptions() { MaxDegreeOfParallelism = 5 }, async (i) =>
+                    int counter = 0;
+                    Parallel.For(0, 100, new ParallelOptions() { MaxDegreeOfParallelism = 5, CancellationToken = cancellationTokenSource.Token }, async (i) =>
                     {
-                        using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                        try
                         {
-                            var user1 = await repository.FirstOrDefaultAsync<TestUserEntity>(f => f.Surname == "Surname");
+                            var val = Interlocked.Increment(ref counter);
+                            using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                            {
+                                var user = new TestUserEntity()
+                                {
+                                    Name = $"Name",
+                                    Surname = "Surname",
+                                };
 
-                            user1.Name = "Name" + i.ToString("00");
+                                await repository.InsertAsync(user);
 
-                            await unitOfWork.SaveChangesAsync();
+                                await unitOfWork.SaveChangesAsync();
 
-                            repository.Update(user1);
+                                repository.Update(user);
 
-                            await unitOfWork.SaveChangesAsync();
+                                user.Name = $"Name{val.ToString("000")}";
+
+                                await unitOfWork.SaveChangesAsync();
+                            }
+
+                        }
+                        catch (Exception ex)
+                        {
+                            throw;
+                        }
+                        finally
+                        {
+                            Interlocked.Decrement(ref counter);
                         }
                     });
+
+                    while (Interlocked.CompareExchange(ref counter, 0, 0) != 0)
+                        await Task.Delay(1).ConfigureAwait(false);
+
+                    using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                    {
+                        var users = await repository.AsQueryable<TestUserEntity>().ToListAsync();
+                        users.Count.ShouldBe(101);
+                    }
+                }
+
+                //request scope 3
+                using (IServiceScope requestScope = build.Services.CreateScope())
+                using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
+                using (var cancellationTokenSource = new CancellationTokenSource())
+                {
+                    List<TestUserEntity> entities = new();
+
+                    using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                        entities = await repository.AsQueryable<TestUserEntity>().ToListAsync();
+                    
+                    int counter = 0;
+                    Parallel.For(0, entities.Count, new ParallelOptions() { MaxDegreeOfParallelism = 10, CancellationToken = cancellationTokenSource.Token }, async (i) =>
+                     {
+                         try
+                         {
+                             var val = Interlocked.Increment(ref counter);
+                             using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                             {
+                                 var user = entities[i];
+                                 repository.Delete(user);
+
+                                 await unitOfWork.SaveChangesAsync();
+                             }
+
+                         }
+                         catch (Exception ex)
+                         {
+                             throw;
+                         }
+                         finally
+                         {
+                             Interlocked.Decrement(ref counter);
+                         }
+                     });
+
+                    while (Interlocked.CompareExchange(ref counter, 0, 0) != 0)
+                        await Task.Delay(1).ConfigureAwait(false);
+
+                    entities.Clear();
+                }
+
+                //request scope 4
+                using (IServiceScope requestScope = build.Services.CreateScope())
+                using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
+                using (var cancellationTokenSource = new CancellationTokenSource())
+                {
+                    using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                    {
+                        var users = await repository.AsQueryable<TestUserEntity>().ToListAsync();
+                        users.Count.ShouldBe(0);
+                    }
                 }
             }
         }

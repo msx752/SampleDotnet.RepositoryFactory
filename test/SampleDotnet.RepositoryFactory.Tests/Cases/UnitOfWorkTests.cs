@@ -435,7 +435,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
             services.AddDbContextFactoryWithUnitOfWork<FirstDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "FirstDbContext_Case_UnitOfWork";  // Set the initial catalog (database name).
+                cnnBuilder.InitialCatalog = "TwoDifferent_DbContext_Rollback_FirstDb";  // Set the initial catalog (database name).
                 cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
                 cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
                 cnnBuilder.ConnectRetryCount = 5;  // Set the number of retry attempts for connection.
@@ -449,7 +449,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
             services.AddDbContextFactoryWithUnitOfWork<SecondDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "SecondDbContext_Case_UnitOfWork";  // Set the initial catalog (database name).
+                cnnBuilder.InitialCatalog = "TwoDifferent_DbContext_Rollback_SecondDb";  // Set the initial catalog (database name).
                 cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
                 cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
                 cnnBuilder.ConnectRetryCount = 5;  // Set the number of retry attempts for connection.

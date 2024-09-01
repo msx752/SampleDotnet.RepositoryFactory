@@ -8,6 +8,7 @@
     {
         // A pool to hold created DbContexts for the lifetime of the UnitOfWork.
         private readonly Queue<DbContext> _dbContextPool = new();
+        private readonly object _lock__dbContextPool = new object();
 
         // A thread-safe dictionary to manage repositories keyed by DbContextId.
         private readonly ConcurrentDictionary<DbContextId, IRepository> _repositoryPool = new();
@@ -48,19 +49,22 @@
         public IRepository<TDbContext> CreateRepository<TDbContext>()
             where TDbContext : DbContext
         {
-            var dbContext = _serviceProvider
-                .GetRequiredService<IDbContextFactory<TDbContext>>()
-                .CreateDbContext();
+            lock (_lock__dbContextPool)
+            {
+                var dbContext = _serviceProvider
+                    .GetRequiredService<IDbContextFactory<TDbContext>>()
+                    .CreateDbContext();
 
-            // Enqueue the DbContext into the pool.
-            _dbContextPool.Enqueue(dbContext);
+                // Enqueue the DbContext into the pool.
+                _dbContextPool.Enqueue(dbContext);
 
-            var repository = new Repository<TDbContext>(dbContext);
+                var repository = new Repository<TDbContext>(dbContext);
 
-            // Add the repository to the pool, keyed by the DbContextId.
-            _repositoryPool.TryAdd(dbContext.ContextId, repository);
+                // Add the repository to the pool, keyed by the DbContextId.
+                _repositoryPool.TryAdd(dbContext.ContextId, repository);
 
-            return repository;
+                return repository;
+            }
         }
 
         /// <summary>
@@ -94,7 +98,7 @@
                 DbContext? thrownExceptionDbContext = null;
 
                 // Wait asynchronously to ensure only one save operation is performed at a time.
-                await _semaphoreSlim.WaitAsync(cancellationToken);
+                await _semaphoreSlim.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 try
                 {
@@ -111,7 +115,7 @@
 
                             // Save changes if there are any tracked changes.
                             if (dbContext.ChangeTracker.HasChanges())
-                                await dbContext.SaveChangesAsync(false, cancellationToken);
+                                await dbContext.SaveChangesAsync(false, cancellationToken).ConfigureAwait(false);
 
                             successfullyCommitedConnectionCount++;
                         }
@@ -131,7 +135,7 @@
                                 {
                                     Parallel.For(0, cache.Count(), new ParallelOptions { MaxDegreeOfParallelism = 1, CancellationToken = cancellationToken }, async i =>
                                     {
-                                        await cache.ElementAt(i).RollbackChangesAsync(false, cancellationToken);
+                                        await cache.ElementAt(i).RollbackChangesAsync(false, cancellationToken).ConfigureAwait(false);
                                     });
                                 });
 
