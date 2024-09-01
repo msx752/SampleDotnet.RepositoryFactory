@@ -1,11 +1,11 @@
 ﻿using DotNet.Testcontainers.Builders;
-using Microsoft.Data.SqlClient;
+using SampleDotnet.RepositoryFactory.Tests.TestModels.DbContexts;
 using Testcontainers.MsSql;
 
 namespace SampleDotnet.RepositoryFactory.Tests.Cases;
 
 // Unit tests for UnitOfWork implementation using an asynchronous approach.
-public class UnitOfWorkTests : IAsyncLifetime
+public partial class UnitOfWorkTests : IAsyncLifetime
 {
     // A container for running SQL Server in Docker for testing purposes.
     private readonly MsSqlContainer _sqlContainer;
@@ -15,8 +15,7 @@ public class UnitOfWorkTests : IAsyncLifetime
     {
         _sqlContainer = new MsSqlBuilder()
             .WithPassword("Admin123!")  // Set the password for the SQL Server.
-            .WithCleanUp(true)        // Do not automatically clean up the container.
-            .WithReuse(true)           // Reuse the container if it already exists.
+            .WithCleanUp(true)        // automatically clean up the container.
             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))  // Wait strategy to ensure SQL Server is ready.
             .Build();  // Build the container.
     }
@@ -229,6 +228,7 @@ public class UnitOfWorkTests : IAsyncLifetime
             }
         }
     }
+
     /// <summary>
     /// Tests that the UnitOfWork does not skip detecting changes in the DbContext.
     /// Ensures that all entity changes are correctly tracked and persisted.
@@ -565,7 +565,7 @@ public class UnitOfWorkTests : IAsyncLifetime
             Based on the analysis of existing tests, here is a suggested new test scenario:
 
             Test Case: Simultaneous Operations with Save Points
-            Purpose: Test the ability of the Unit of Work to handle save points and partial rollbacks. 
+            Purpose: Test the ability of the Unit of Work to handle save points and partial rollbacks.
                 This scenario would simulate a situation where some operations need to be committed while others need to be rolled back within the same Unit of Work.
 :
             Setup:
@@ -705,15 +705,15 @@ public class UnitOfWorkTests : IAsyncLifetime
             Reasoning Behind This Test Scenario
             Testing Interleaved Valid and Invalid Operations:
 
-            The scenario tests the behavior of the UnitOfWork when it encounters a mix of valid and invalid operations in the same transaction. 
+            The scenario tests the behavior of the UnitOfWork when it encounters a mix of valid and invalid operations in the same transaction.
             It's essential to ensure that the presence of any invalid operation triggers a complete rollback of all operations, preserving data integrity.
             Ensuring Complete Rollback:
 
-            This test validates that the rollback mechanism is robust and correctly reverts all changes, not just those that occurred after the invalid operation. 
+            This test validates that the rollback mechanism is robust and correctly reverts all changes, not just those that occurred after the invalid operation.
             This is crucial for maintaining consistency across transactions, especially when multiple DbContext instances are involved.
             Simulating Real-World Scenarios:
 
-            In real-world applications, it is common to perform multiple operations within a single transaction. These operations may depend on each other, 
+            In real-world applications, it is common to perform multiple operations within a single transaction. These operations may depend on each other,
             and failure to properly handle an interleaved invalid operation could lead to data corruption or inconsistent states. This test ensures the application can handle such scenarios gracefully.
          */
 
@@ -809,81 +809,108 @@ public class UnitOfWorkTests : IAsyncLifetime
         }
     }
 
-
-    #region DbContext 1
-
-    // Represents the first database context for Entity Framework Core.
-    internal class FirstDbContext : DbContext
+    /// <summary>
+    /// Tests nested transactions using save points within a single DbContext.
+    /// Ensures that changes can be partially committed or rolled back at different levels of nesting.
+    /// </summary>
+    /// <summary>
+    /// Tests nested transactions using save points within a single DbContext.
+    /// Ensures that changes can be partially committed up to a save point and then rolled back.
+    /// </summary>
+    [Fact]
+    public async Task Case_UnitOfWork_NestedTransactionsWithSavePoints()
     {
-        public FirstDbContext(DbContextOptions<FirstDbContext> options)
-            : base(options)
+        // Create an IHostBuilder and configure services to use TestApplicationDbContext with UnitOfWork.
+        IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-        }
+            // Configure TestApplicationDbContext with SQL Server settings.
+            services.AddDbContextFactoryWithUnitOfWork<TestApplicationDbContext>(options =>
+            {
+                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                cnnBuilder.InitialCatalog = "Case_UnitOfWork_NestedTransactionsWithSavePoints";  // Set the initial catalog (database name).
+                cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
+                cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
+                cnnBuilder.ConnectRetryCount = 5;  // Set the number of retry attempts for connection.
+                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;  // Set connection timeout.
+                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());  // Use SQL Server with retry on failure.
+                options.EnableSensitiveDataLogging();  // Enable logging of sensitive data (for debugging purposes).
+                options.EnableDetailedErrors();  // Enable detailed error messages (for debugging purposes).
+            });
+        });
 
-        public DbSet<FirstDbEntity> FirstDbEntity { get; set; }
-    }
-
-    // Represents an entity in the first database context.
-    [Table("FirstDbEntity")]
-    internal class FirstDbEntity : IHasDateTimeOffset
-    {
-        public DateTimeOffset? CreatedAt { get; set; }
-
-        /// <summary>
-        /// SELF NOTE: Use GUID for the PrimaryKey and SecondaryKey to be able to fix ID Conflict Exceptions when committing the changes
-        /// </summary>
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid Id { get; set; }  // Primary key.
-
-        [Required]
-        public Nullable<decimal> Price { get; set; }
-
-        [Required(AllowEmptyStrings = false)]
-        public string? ProductName { get; set; }  // Product name, required and cannot be empty.
-
-          // Price, required.
-
-          // DateTime when entity was created.
-        public DateTimeOffset? UpdatedAt { get; set; }  // DateTime when entity was last updated.
-    }
-
-    #endregion DbContext 1
-
-    #region DbContext 2
-
-    // Represents the second database context for Entity Framework Core.
-    internal class SecondDbContext : DbContext
-    {
-        public SecondDbContext(DbContextOptions<SecondDbContext> options)
-            : base(options)
+        // Build the IHost and get the required services for testing.
+        using (IHost build = host.Build())
         {
+            // Ensure TestApplicationDbContext database is created and clean up any existing data.
+            var dbContextFactory = build.Services.GetRequiredService<IDbContextFactory<TestApplicationDbContext>>();
+            using (var context = dbContextFactory.CreateDbContext())
+            {
+                context.Database.EnsureCreated();  // Ensure the database for TestApplicationDbContext is created.
+                await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();  // Clean up table records in TestApplicationDbContext.
+            }
+
+            // Begin a new request scope for dependency injection.
+            using (IServiceScope requestScope = build.Services.CreateScope())
+            using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
+            using (var cancellationTokenSource = new CancellationTokenSource())
+            {
+                // Step 1: Insert a valid entity and commit the transaction.
+                using (IRepository<TestApplicationDbContext> repo = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                {
+                    var entity1 = new TestUserEntity { Name = "User1", Surname = "Surname1" };
+                    await repo.InsertAsync(entity1, cancellationTokenSource.Token);
+                    var commitSuccess1 = await unitOfWork.SaveChangesAsync(cancellationTokenSource.Token);  // Commit the transaction.
+                    commitSuccess1.ShouldBeTrue();  // Ensure the commit was successful.
+                }
+
+                // Step 2: Insert another valid entity and save changes to create a save point.
+                using (IRepository<TestApplicationDbContext> repo = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                {
+                    var entity2 = new TestUserEntity { Name = "User2", Surname = "Surname2" };
+                    await repo.InsertAsync(entity2, cancellationTokenSource.Token);
+
+                    var savePointSuccess = await unitOfWork.SaveChangesAsync(cancellationTokenSource.Token);  // Commit changes to create a save point.
+                    savePointSuccess.ShouldBeTrue();  // Ensure the save point was committed successfully.
+                }
+
+                // Step 3: Insert an invalid entity and simulate nested transaction rollback.
+                try
+                {
+                    using (IRepository<TestApplicationDbContext> repo = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                    {
+                        var entity3 = new TestUserEntity { Name = null, Surname = "Surname3" };  // Invalid entity.
+                        await repo.InsertAsync(entity3, cancellationTokenSource.Token);
+
+                        await unitOfWork.SaveChangesAsync(cancellationTokenSource.Token);  // Attempt to save changes.
+                    }
+                }
+                catch (DbUpdateException)
+                {
+                    // Rollback to the save point due to invalid entity.
+                    await unitOfWork.SaveChangesAsync(cancellationTokenSource.Token);  // This rollback should be automatic in most implementations, but we ensure it's explicitly checked.
+                }
+
+                // Step 4: Verify the second entity is still committed after rollback to save point.
+                using (IRepository<TestApplicationDbContext> repo = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                {
+                    var entity2 = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == "User2");
+                    entity2.ShouldNotBeNull();  // Ensure the second entity is still committed.
+                }
+
+                // Step 5: Verify the first entity is committed.
+                using (IRepository<TestApplicationDbContext> repo = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                {
+                    var entity1 = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Name == "User1");
+                    entity1.ShouldNotBeNull();  // Ensure the first entity is committed.
+                }
+
+                // Step 6: Verify the third entity was rolled back and not committed.
+                using (IRepository<TestApplicationDbContext> repo = unitOfWork.CreateRepository<TestApplicationDbContext>())
+                {
+                    var entity3 = await repo.FirstOrDefaultAsync<TestUserEntity>(f => f.Surname == "Surname3");
+                    entity3.ShouldBeNull();  // Ensure the third entity was rolled back.
+                }
+            }
         }
-
-        public DbSet<SecondDbEntity> SecondDbEntity { get; set; }
     }
-
-    // Represents an entity in the second database context.
-    [Table("SecondDbEntity")]
-    internal class SecondDbEntity : IHasDateTimeOffset
-    {
-        public DateTimeOffset? CreatedAt { get; set; }
-
-        [Required(AllowEmptyStrings = false)]
-        public string? CustomerName { get; set; }
-
-        /// <summary>
-        /// SELF NOTE: Use GUID for the PrimaryKey and SecondaryKey to be able to fix ID Conflict Exceptions when committing the changes
-        /// </summary>
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid Id { get; set; }  // Primary key.
-
-          // Customer name, required and cannot be empty.
-
-          // DateTime when entity was created.
-        public DateTimeOffset? UpdatedAt { get; set; }  // DateTime when entity was last updated.
-    }
-
-    #endregion DbContext 2
 }

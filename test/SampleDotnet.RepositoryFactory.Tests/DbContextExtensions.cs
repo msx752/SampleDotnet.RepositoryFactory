@@ -1,11 +1,4 @@
-﻿using Microsoft.Data.SqlClient;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SampleDotnet.RepositoryFactory.Tests
+﻿namespace SampleDotnet.RepositoryFactory.Tests
 {
     public static class DbContextExtensions
     {

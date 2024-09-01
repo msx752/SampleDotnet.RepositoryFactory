@@ -1,5 +1,5 @@
 ﻿using DotNet.Testcontainers.Builders;
-using Microsoft.Data.SqlClient;
+using SampleDotnet.RepositoryFactory.Tests.TestModels.DbContexts;
 using Testcontainers.MsSql;
 
 namespace SampleDotnet.RepositoryFactory.Tests.Cases
@@ -7,15 +7,16 @@ namespace SampleDotnet.RepositoryFactory.Tests.Cases
     public class DbContextDisposeTests : IAsyncLifetime
     {
         private readonly MsSqlContainer _sqlContainer;
+
         public DbContextDisposeTests()
         {
             _sqlContainer = new MsSqlBuilder()
-                .WithPassword("Admin123!")
-                .WithCleanUp(true)
-                .WithReuse(true)
-                .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))
-                .Build();
+                .WithPassword("Admin123!")  // Set the password for the SQL Server.
+                .WithCleanUp(true)        // automatically clean up the container.
+                .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))  // Wait strategy to ensure SQL Server is ready.
+                .Build();  // Build the container.
         }
+
         public async Task InitializeAsync()
         {
             await _sqlContainer.StartAsync();
@@ -114,7 +115,6 @@ namespace SampleDotnet.RepositoryFactory.Tests.Cases
                     context.Database.EnsureCreated();
                     await context.CLEAN_TABLES_DO_NOT_USE_PRODUCTION();
                 }
-
 
                 //request scope 1
                 using (IServiceScope requestScope = build.Services.CreateScope())

@@ -7,16 +7,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <None Remove="appsettings.json" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Content Include="appsettings.json">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	</ItemGroup>
-
-	<ItemGroup>
 		<ProjectReference Include="..\..\src\SampleDotnet.RepositoryFactory\SampleDotnet.RepositoryFactory.csproj" />
 	</ItemGroup>
 

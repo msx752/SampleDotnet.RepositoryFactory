@@ -1,5 +1,5 @@
 ﻿using DotNet.Testcontainers.Builders;
-using Microsoft.Data.SqlClient;
+using SampleDotnet.RepositoryFactory.Tests.TestModels.DbContexts;
 using Testcontainers.MsSql;
 
 namespace SampleDotnet.RepositoryFactory.Tests.Cases;
@@ -7,15 +7,16 @@ namespace SampleDotnet.RepositoryFactory.Tests.Cases;
 public class DateTimeOffsetTests : IAsyncLifetime
 {
     private readonly MsSqlContainer _sqlContainer;
+
     public DateTimeOffsetTests()
     {
         _sqlContainer = new MsSqlBuilder()
-            .WithPassword("Admin123!")
-            .WithCleanUp(true)
-            .WithReuse(true)
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))
-            .Build();
+            .WithPassword("Admin123!")  // Set the password for the SQL Server.
+            .WithCleanUp(true)        // automatically clean up the container.
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))  // Wait strategy to ensure SQL Server is ready.
+            .Build();  // Build the container.
     }
+
     public async Task InitializeAsync()
     {
         await _sqlContainer.StartAsync();
@@ -59,7 +60,6 @@ public class DateTimeOffsetTests : IAsyncLifetime
             //scope1
             using (IServiceScope scope = build.Services.CreateScope())
             {
-
                 var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                 using (IRepository<TestApplicationDbContext> repo = uow.CreateRepository<TestApplicationDbContext>())
                 {

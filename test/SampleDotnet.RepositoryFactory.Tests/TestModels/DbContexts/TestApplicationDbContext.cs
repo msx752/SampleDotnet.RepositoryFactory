@@ -1,6 +1,4 @@
-﻿using Microsoft.Data.SqlClient;
-
-namespace SampleDotnet.RepositoryFactory.Tests;
+﻿namespace SampleDotnet.RepositoryFactory.Tests.TestModels.DbContexts;
 
 public class TestApplicationDbContext : DbContext
 {
