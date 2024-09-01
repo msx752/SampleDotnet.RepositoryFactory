@@ -189,28 +189,16 @@ internal class UnitOfWork : IUnitOfWork
         {
             if (disposing)
             {
-                // Dispose all repositories.
+                // Dispose all Repositories
                 foreach (var key in _repositoryPool.Keys)
                 {
                     if (_repositoryPool.TryRemove(key, out var repository))
-                    {
-                        try
-                        {
-                            repository.Dispose();
-                        }
-                        catch { /* Log or handle the exception if needed */ }
-                    }
+                        repository.Dispose();
                 }
 
                 // Dispose all DbContexts.
                 while (_dbContextPool.TryDequeue(out var dbContext) && dbContext != null)
-                {
-                    try
-                    {
-                        dbContext.Dispose();
-                    }
-                    catch { /* Log or handle the exception if needed */ }
-                }
+                    dbContext.Dispose();
 
                 // Dispose the semaphore.
                 _semaphoreSlim.Dispose();

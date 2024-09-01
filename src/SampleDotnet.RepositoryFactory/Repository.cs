@@ -31,7 +31,7 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     /// <returns>An IQueryable of the specified entity type.</returns>
     public IQueryable<T> AsQueryable<T>() where T : class
     {
-        return CachedDbSet<T>();
+        return DbContext.Set<T>();
     }
 
     /// <summary>
@@ -41,7 +41,7 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     /// <returns>An IQueryable of the specified entity type.</returns>
     public IQueryable<T> AsQueryableWithNoTracking<T>() where T : class
     {
-        return CachedDbSet<T>().AsNoTracking();
+        return DbContext.Set<T>().AsNoTracking();
     }
 
     /// <summary>
@@ -77,7 +77,7 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        CachedDbSet<T>().RemoveRange(entities);
+        DbContext.Set<T>().RemoveRange(entities);
     }
 
     /// <summary>
@@ -90,7 +90,7 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     {
         ArgumentNullException.ThrowIfNull(keyValues, nameof(keyValues));
 
-        return CachedDbSet<T>().Find(keyValues);
+        return DbContext.Set<T>().Find(keyValues);
     }
 
     /// <summary>
@@ -104,7 +104,7 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     {
         ArgumentNullException.ThrowIfNull(keyValues, nameof(keyValues));
 
-        return CachedDbSet<T>().FindAsync(keyValues, cancellationToken);
+        return DbContext.Set<T>().FindAsync(keyValues, cancellationToken);
     }
 
     /// <summary>
@@ -187,7 +187,7 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
 
-        CachedDbSet<T>().Add((T)_funcCreatedAt(entity));
+        DbContext.Set<T>().Add((T)_funcCreatedAt(entity));
     }
 
     /// <summary>
@@ -199,7 +199,7 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        CachedDbSet<T>().AddRange(entities.Select(f => (T)_funcCreatedAt(f)));
+        DbContext.Set<T>().AddRange(entities.Select(f => (T)_funcCreatedAt(f)));
     }
 
     /// <summary>
@@ -211,7 +211,7 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        CachedDbSet<T>().AddRange(entities.Select(f => (T)_funcCreatedAt(f)));
+        DbContext.Set<T>().AddRange(entities.Select(f => (T)_funcCreatedAt(f)));
     }
 
     /// <summary>
@@ -225,7 +225,7 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
 
-        return CachedDbSet<T>().AddAsync((T)_funcCreatedAt(entity), cancellationToken);
+        return DbContext.Set<T>().AddAsync((T)_funcCreatedAt(entity), cancellationToken);
     }
 
     /// <summary>
@@ -239,7 +239,7 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        return CachedDbSet<T>().AddRangeAsync(entities.Select(f => (T)_funcCreatedAt(f)), cancellationToken);
+        return DbContext.Set<T>().AddRangeAsync(entities.Select(f => (T)_funcCreatedAt(f)), cancellationToken);
     }
 
     /// <summary>
@@ -253,7 +253,7 @@ internal class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> 
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        return CachedDbSet<T>().AddRangeAsync(entities.Select(f => (T)_funcCreatedAt(f)), cancellationToken);
+        return DbContext.Set<T>().AddRangeAsync(entities.Select(f => (T)_funcCreatedAt(f)), cancellationToken);
     }
 
     /// <summary>
