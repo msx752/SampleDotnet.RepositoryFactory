@@ -1,4 +1,6 @@
-﻿namespace SampleDotnet.RepositoryFactory;
+﻿using Microsoft.Extensions.DependencyInjection.Extensions;
+
+namespace SampleDotnet.RepositoryFactory;
 
 /// <summary>
 /// Extension methods for adding DbContext factory and UnitOfWork to the service collection.

@@ -56,7 +56,7 @@ public class TransactionManager : ITransactionManager, IDisposable
 
                     // Save changes if there are any tracked changes.
                     if (dbContext.ChangeTracker.HasChanges())
-                        await dbContext.SaveChangesAsync(false, cancellationToken).ConfigureAwait(false);
+                        await dbContext.SaveChangesAsync(false, cancellationToken);
 
                     successfullyCommitedConnectionCount++;
                 }
