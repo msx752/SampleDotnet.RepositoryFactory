@@ -1,4 +1,4 @@
-﻿namespace SampleDotnet.RepositoryFactory.Interfaces;
+﻿namespace SampleDotnet.RepositoryFactory.Interfaces.Repositories;
 
 /// <summary>
 /// Interface for asynchronous read operations in a repository, providing methods to retrieve entities asynchronously.

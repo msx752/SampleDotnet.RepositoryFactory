@@ -1,4 +1,6 @@
-﻿namespace SampleDotnet.RepositoryFactory.Tests.TestModels.Entities;
+﻿using SampleDotnet.RepositoryFactory.Interfaces.Utilities;
+
+namespace SampleDotnet.RepositoryFactory.Tests.TestModels.Entities;
 
 // Represents an entity in the first database context.
 [Table("FirstDbEntity")]

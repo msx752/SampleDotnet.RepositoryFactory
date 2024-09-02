@@ -1,4 +1,4 @@
-﻿namespace SampleDotnet.RepositoryFactory;
+﻿namespace SampleDotnet.RepositoryFactory.Repositories.Base;
 
 /// <summary>
 /// Base class for repository implementations providing basic CRUD operations and caching mechanisms.
@@ -16,6 +16,7 @@ internal abstract class RepositoryBase : IDbContextRepository, IWriteNativeRepos
 
     // The DbContext used by the repository.
     private readonly DbContext _context;
+
     // Indicates whether the object has been disposed.
     private bool disposedValue;
 
@@ -42,6 +43,7 @@ internal abstract class RepositoryBase : IDbContextRepository, IWriteNativeRepos
     /// Gets the DbContext instance used by the repository.
     /// </summary>
     internal DbContext DbContext => _context;
+
     /// <summary>
     /// Deletes a specified entity from the DbContext.
     /// </summary>

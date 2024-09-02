@@ -1,4 +1,4 @@
-﻿namespace SampleDotnet.RepositoryFactory.Tests
+﻿namespace SampleDotnet.RepositoryFactory.Tests.Extensions
 {
     public static class DbContextExtensions
     {

@@ -1,4 +1,6 @@
 ﻿using DotNet.Testcontainers.Builders;
+using SampleDotnet.RepositoryFactory.Interfaces.Core;
+using SampleDotnet.RepositoryFactory.Tests.Extensions;
 using SampleDotnet.RepositoryFactory.Tests.TestModels.DbContexts;
 using Testcontainers.MsSql;
 

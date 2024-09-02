@@ -1,4 +1,4 @@
-﻿namespace SampleDotnet.RepositoryFactory.Interfaces;
+﻿namespace SampleDotnet.RepositoryFactory.Interfaces.Repositories;
 
 /// <summary>
 /// Interface for repository operations specific to a DbContext, providing access to the ChangeTracker and Database.

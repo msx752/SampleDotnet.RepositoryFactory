@@ -1,4 +1,4 @@
-﻿namespace SampleDotnet.RepositoryFactory;
+﻿namespace SampleDotnet.RepositoryFactory.Repositories.Implementations;
 
 /// <summary>
 /// A generic repository class that provides CRUD operations and additional methods for querying and manipulating entities.

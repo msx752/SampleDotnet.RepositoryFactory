@@ -1,4 +1,4 @@
-﻿namespace SampleDotnet.RepositoryFactory.Interfaces;
+﻿namespace SampleDotnet.RepositoryFactory.Interfaces.Repositories;
 
 /// <summary>
 /// Interface for synchronous write operations in a repository, providing methods to insert, update, and delete entities.

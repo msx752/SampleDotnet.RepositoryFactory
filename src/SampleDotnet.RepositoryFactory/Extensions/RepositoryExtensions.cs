@@ -24,6 +24,9 @@ public static class RepositoryExtensions
 
         // Adds the UnitOfWork as a scoped service if it hasn't already been added.
         Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddScoped<IUnitOfWork, UnitOfWork>(serviceCollection);
+        Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddScoped<IDbContextManager, DbContextManager>(serviceCollection);
+        Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddScoped<IRepositoryFactory, Repositories.Factories.RepositoryFactory>(serviceCollection);
+        Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddScoped<ITransactionManager, TransactionManager>(serviceCollection);
 
         return serviceCollection;
     }

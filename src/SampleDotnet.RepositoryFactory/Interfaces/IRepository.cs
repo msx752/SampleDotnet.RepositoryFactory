@@ -11,7 +11,7 @@ public interface IRepository : IDisposable
 /// Represents a generic repository interface for a specific <see cref="DbContext"/> type, providing additional functionality.
 /// </summary>
 /// <typeparam name="TDbContext">The type of the DbContext.</typeparam>
-public interface IRepository<TDbContext> : 
+public interface IRepository<TDbContext> :
     IRepository,
     IReadRepository,
     IReadNativeRepository,
@@ -22,5 +22,4 @@ public interface IRepository<TDbContext> :
     IQueryableRepository
     where TDbContext : DbContext
 {
-
 }

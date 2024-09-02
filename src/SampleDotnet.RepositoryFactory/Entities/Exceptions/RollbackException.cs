@@ -1,4 +1,4 @@
-﻿namespace SampleDotnet.RepositoryFactory;
+﻿namespace SampleDotnet.RepositoryFactory.Entities.Exceptions;
 
 /// <summary>
 /// Represents an exception that is thrown when a rollback operation fails.
