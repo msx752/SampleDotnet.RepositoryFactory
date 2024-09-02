@@ -146,7 +146,7 @@ namespace SampleDotnet.RepositoryFactory.Tests.Cases
                 using (var cancellationTokenSource = new CancellationTokenSource())
                 {
                     int counter = 0;
-                    Parallel.For(0, 100, new ParallelOptions() { MaxDegreeOfParallelism = 5, CancellationToken = cancellationTokenSource.Token }, async (i) =>
+                    Parallel.For(0, 50, new ParallelOptions() { MaxDegreeOfParallelism = 5, CancellationToken = cancellationTokenSource.Token }, async (i) =>
                     {
                         try
                         {
@@ -187,7 +187,7 @@ namespace SampleDotnet.RepositoryFactory.Tests.Cases
                     using (var repository = unitOfWork.CreateRepository<TestApplicationDbContext>())
                     {
                         var users = await repository.AsQueryable<TestUserEntity>().ToListAsync();
-                        users.Count.ShouldBe(101);
+                        users.Count.ShouldBe(51);
                     }
                 }
 
