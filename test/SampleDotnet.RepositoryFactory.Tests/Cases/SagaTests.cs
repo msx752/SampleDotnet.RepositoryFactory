@@ -1,6 +1,8 @@
 ﻿using DotNet.Testcontainers.Builders;
 using MassTransit;
 using MassTransit.Testing;
+using SampleDotnet.RepositoryFactory.Interfaces.Core;
+using SampleDotnet.RepositoryFactory.Tests.TestModels.DbContexts;
 using SampleDotnet.RepositoryFactory.Tests.TestModels.Sagas;
 using Testcontainers.MsSql;
 
@@ -108,9 +110,9 @@ namespace SampleDotnet.RepositoryFactory.Tests.Cases
 
                     // 1. Publish the StartTransaction message to start the saga
                     await harness.Bus.Publish(new StartTransaction(correlationId, 100M, new List<SagaCartItem>
-                {
-                    new SagaCartItem { ProductId = Guid.NewGuid(), Quantity = 2, Price = 20M }
-                }), cancellationTokenSource.Token);
+                    {
+                        new SagaCartItem { ProductId = Guid.NewGuid(), Quantity = 2, Price = 20M }
+                    }), cancellationTokenSource.Token);
 
                     // Verify StartTransaction is consumed
                     (await harness.Consumed.Any<StartTransaction>()).ShouldBeTrue();
@@ -145,6 +147,37 @@ namespace SampleDotnet.RepositoryFactory.Tests.Cases
                     // 5. Ensure saga is in Completed state after processing CompleteCart
                     instance = sagaHarness.Created.ContainsInState(correlationId, sagaHarness.StateMachine, sagaHarness.StateMachine.Completed);
                     instance.ShouldNotBeNull();
+
+                    // Simulate a failure after payment, triggering compensation
+                    await harness.Bus.Publish(new CompensateTransaction(correlationId));
+
+                    // Verify CompensateTransactionEvent is consumed
+                    (await harness.Consumed.Any<CompensateTransaction>()).ShouldBeTrue();
+
+                    // 3. Verify that Rollback actions are published as a result of compensation
+                    (await harness.Published.Any<RollbackPayment>()).ShouldBeTrue();
+                    (await harness.Published.Any<RollbackCart>()).ShouldBeTrue();
+
+                    // 4. Ensure saga is in Rolledback state after rollback actions
+                    instance = sagaHarness.Created.ContainsInState(correlationId, sagaHarness.StateMachine, sagaHarness.StateMachine.Rolledback);
+                    instance.ShouldNotBeNull();
+
+                    (await harness.Consumed.Any<RollbackPayment>()).ShouldBeTrue();
+                    (await harness.Consumed.Any<CompleteCart>()).ShouldBeTrue();
+
+                    using (var unitOfWork = build.Services.CreateScope().ServiceProvider.GetRequiredService<IUnitOfWork>())
+                    using (IRepository<PaymentDbContext> repo = unitOfWork.CreateRepository<PaymentDbContext>())
+                    {
+                        var paymentEntity = await repo.Where<Payment>(p => p.TransactionId == correlationId && p.Status == PaymentStatus.Cancelled).ToListAsync();
+                        paymentEntity.Count.ShouldBeEquivalentTo(1);
+                    }
+
+                    using (var unitOfWork = build.Services.CreateScope().ServiceProvider.GetRequiredService<IUnitOfWork>())
+                    using (IRepository<CartDbContext> repo = unitOfWork.CreateRepository<CartDbContext>())
+                    {
+                        var cartEntity = await repo.Where<Cart>(p => p.TransactionId == correlationId && p.Status == CartStatus.Cancelled).ToListAsync();
+                        cartEntity.Count.ShouldBeEquivalentTo(0);
+                    }
                 }
             }
         }

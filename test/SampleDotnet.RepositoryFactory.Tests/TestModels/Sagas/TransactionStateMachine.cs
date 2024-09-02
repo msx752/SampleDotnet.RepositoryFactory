@@ -45,6 +45,15 @@ namespace SampleDotnet.RepositoryFactory.Tests.TestModels.Sagas
                     })
                     .TransitionTo(Rolledback));
 
+            During(Completed,
+                When(CompensateTransactionEvent)
+                    .ThenAsync(async context =>
+                    {
+                        await context.Publish(new RollbackPayment(context.Data.CorrelationId));
+                        await context.Publish(new RollbackCart(context.Data.CorrelationId));
+                    })
+                    .TransitionTo(Rolledback));
+
             SetCompletedWhenFinalized();
         }
 
