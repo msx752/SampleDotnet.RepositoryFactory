@@ -26,14 +26,14 @@ jobs:
     - name: Install Docker
       run: |
         sudo apt-get update
-        sudo apt-get install -y docker.io
+        sudo apt-get install -y docker-ce docker-ce-cli containerd.io
         sudo usermod -aG docker nonrootuser
 
     - name: Restore dependencies
       run: dotnet restore
 
     - name: Build
-      run: dotnet build -c Release
+      run: dotnet build -c Release --no-restore
 
     - name: Test
       env:
