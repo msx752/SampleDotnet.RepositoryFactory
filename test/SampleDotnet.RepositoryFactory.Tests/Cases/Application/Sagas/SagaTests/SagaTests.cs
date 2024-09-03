@@ -1,31 +1,15 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Application.Sagas.SagaTests;
 
-public class SagaTests : IAsyncLifetime
+[Collection("Shared Collection")]
+public class SagaTests
 {
     // A container for running SQL Server in Docker for testing purposes.
-    private readonly MsSqlContainer _sqlContainer;
+    private readonly SharedContainerFixture _shared;
 
     // Constructor initializes the SQL container with specific configurations.
-    public SagaTests()
+    public SagaTests(SharedContainerFixture fixture)
     {
-        _sqlContainer = new MsSqlBuilder()
-            .WithPassword("Admin123!")  // Set the password for the SQL Server.
-            .WithCleanUp(true)        // automatically clean up the container.
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))  // Wait strategy to ensure SQL Server is ready.
-            .Build();  // Build the container.
-    }
-
-    // DisposeAsync stops and disposes of the SQL container asynchronously after each test.
-    public async Task DisposeAsync()
-    {
-        await _sqlContainer.StopAsync();  // Stop the SQL Server container.
-        await _sqlContainer.DisposeAsync();  // Dispose of the SQL Server container.
-    }
-
-    // InitializeAsync starts the SQL container asynchronously before each test.
-    public async Task InitializeAsync()
-    {
-        await _sqlContainer.StartAsync();  // Start the SQL Server container.
+        _shared = fixture;
     }
 
     [Fact]
@@ -37,7 +21,7 @@ public class SagaTests : IAsyncLifetime
             // Configure CartDbContext with SQL Server settings.
             services.AddDbContextFactory<CartDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "CartDbContext_DistributedTransaction_SagaCommitAndRollback";
                 cnnBuilder.TrustServerCertificate = true;
                 cnnBuilder.MultipleActiveResultSets = true;
@@ -51,7 +35,7 @@ public class SagaTests : IAsyncLifetime
             // Configure SecondDbContext with SQL Server settings.
             services.AddDbContextFactory<PaymentDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "PaymentDbContext_DistributedTransaction_SagaCommitAndRollback";  // Set the initial catalog (database name).
                 cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
                 cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
@@ -83,13 +67,8 @@ public class SagaTests : IAsyncLifetime
 
         using (IHost build = host.Build())
         {
-            var CartDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<CartDbContext>>();
-            using (var context = CartDbContextFactory.CreateDbContext())
-                context.Database.EnsureCreated();
-
-            var paymentDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<PaymentDbContext>>();
-            using (var context = paymentDbContextFactory.CreateDbContext())
-                context.Database.EnsureCreated();
+            build.Services.EnsureDatabaseExists<CartDbContext>();
+            build.Services.EnsureDatabaseExists<PaymentDbContext>();
 
             var harness = build.Services.CreateScope().ServiceProvider.GetRequiredService<ITestHarness>();
             await harness.Start();

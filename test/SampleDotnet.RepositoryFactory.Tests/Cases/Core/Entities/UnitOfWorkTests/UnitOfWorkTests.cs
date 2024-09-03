@@ -1,32 +1,17 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Core.Entities.UnitOfWorkTests;
 
 // Unit tests for UnitOfWork implementation using an asynchronous approach.
-public partial class UnitOfWorkTests : IAsyncLifetime
+
+[Collection("Shared Collection")]
+public class UnitOfWorkTests
 {
     // A container for running SQL Server in Docker for testing purposes.
-    private readonly MsSqlContainer _sqlContainer;
+    private readonly SharedContainerFixture _shared;
 
     // Constructor initializes the SQL container with specific configurations.
-    public UnitOfWorkTests()
+    public UnitOfWorkTests(SharedContainerFixture fixture)
     {
-        _sqlContainer = new MsSqlBuilder()
-            .WithPassword("Admin123!")  // Set the password for the SQL Server.
-            .WithCleanUp(true)        // automatically clean up the container.
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))  // Wait strategy to ensure SQL Server is ready.
-            .Build();  // Build the container.
-    }
-
-    // DisposeAsync stops and disposes of the SQL container asynchronously after each test.
-    public async Task DisposeAsync()
-    {
-        await _sqlContainer.StopAsync();  // Stop the SQL Server container.
-        await _sqlContainer.DisposeAsync();  // Dispose of the SQL Server container.
-    }
-
-    // InitializeAsync starts the SQL container asynchronously before each test.
-    public async Task InitializeAsync()
-    {
-        await _sqlContainer.StartAsync();  // Start the SQL Server container.
+        _shared = fixture;
     }
 
     /// <summary>
@@ -42,7 +27,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
             // Configure FirstDbContext with SQL Server settings.
             services.AddDbContextFactory<FirstDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "FirstDbContext_Case_UnitOfWork_CommitAndRollback";  // Set the initial catalog (database name).
                 cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
                 cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
@@ -56,7 +41,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
             // Configure SecondDbContext with SQL Server settings.
             services.AddDbContextFactory<SecondDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "SecondDbContext_Case_UnitOfWork_CommitAndRollback";  // Set the initial catalog (database name).
                 cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
                 cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
@@ -73,21 +58,8 @@ public partial class UnitOfWorkTests : IAsyncLifetime
         // Build the IHost and get the required services for testing.
         using (IHost build = host.Build())
         {
-            // Ensure FirstDbContext database is created and clean up any existing data.
-            var firstDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<FirstDbContext>>();
-            using (var context = firstDbContextFactory.CreateDbContext())
-            {
-                context.Database.EnsureCreated();  // Ensure the database for FirstDbContext is created.
-                await context.CLEAN_TABLES_DO_NOT_USE_IN_PRODUCTION();  // Clean up table records in FirstDbContext.
-            }
-
-            // Ensure SecondDbContext database is created and clean up any existing data.
-            var secondDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<SecondDbContext>>();
-            using (var context = secondDbContextFactory.CreateDbContext())
-            {
-                context.Database.EnsureCreated();  // Ensure the database for SecondDbContext is created.
-                await context.CLEAN_TABLES_DO_NOT_USE_IN_PRODUCTION();  // Clean up table records in SecondDbContext.
-            }
+            build.Services.EnsureDatabaseExists<FirstDbContext>();
+            build.Services.EnsureDatabaseExists<SecondDbContext>();
 
             // Begin a new request scope for dependency injection.
             using (IServiceScope requestScope = build.Services.CreateScope())
@@ -240,7 +212,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
             // Configure TestApplicationDbContext with SQL Server settings.
             services.AddDbContextFactory<ThirdDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "Case_UnitOfWork_Do_Not_Skip_DetectChanges";  // Set the initial catalog (database name).
                 cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
                 cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
@@ -257,13 +229,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
         // Build the IHost and get the required services for testing.
         using (IHost build = host.Build())
         {
-            // Ensure TestApplicationDbContext database is created and clean up any existing data.
-            var firstDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<ThirdDbContext>>();
-            using (var context = firstDbContextFactory.CreateDbContext())
-            {
-                context.Database.EnsureCreated();  // Ensure the database for TestApplicationDbContext is created.
-                await context.CLEAN_TABLES_DO_NOT_USE_IN_PRODUCTION();  // Clean up table records in TestApplicationDbContext.
-            }
+            build.Services.EnsureDatabaseExists<ThirdDbContext>();
 
             // Begin a new request scope for dependency injection.
             using (IServiceScope requestScope = build.Services.CreateScope())
@@ -321,7 +287,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
             // Configure DbContextFactory and UnitOfWork for the test.
             services.AddDbContextFactory<ThirdDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "Case_UnitOfWork_Rollback";  // Set the database name.
                 cnnBuilder.TrustServerCertificate = true;  // Trust the SQL Server certificate.
                 cnnBuilder.MultipleActiveResultSets = true;  // Enable multiple active result sets.
@@ -337,12 +303,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
 
         using (IHost build = host.Build())
         {
-            var testApplicationDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<ThirdDbContext>>();
-            using (var context = testApplicationDbContextFactory.CreateDbContext())
-            {
-                context.Database.EnsureCreated();  // Ensure the database is created.
-                await context.CLEAN_TABLES_DO_NOT_USE_IN_PRODUCTION();  // Clean up any existing data.
-            }
+            build.Services.EnsureDatabaseExists<ThirdDbContext>();
 
             // Begin a new request scope for dependency injection.
             using (IServiceScope requestScope = build.Services.CreateScope())
@@ -436,7 +397,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
             // Configure FirstDbContext with SQL Server settings.
             services.AddDbContextFactory<FirstDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "TwoDifferent_DbContext_Rollback_FirstDb";  // Set the initial catalog (database name).
                 cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
                 cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
@@ -450,7 +411,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
             // Configure SecondDbContext with SQL Server settings.
             services.AddDbContextFactory<SecondDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "TwoDifferent_DbContext_Rollback_SecondDb";  // Set the initial catalog (database name).
                 cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
                 cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
@@ -467,21 +428,8 @@ public partial class UnitOfWorkTests : IAsyncLifetime
         // Build the IHost and get the required services for testing.
         using (IHost build = host.Build())
         {
-            // Ensure FirstDbContext database is created and clean up any existing data.
-            var firstDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<FirstDbContext>>();
-            using (var context = firstDbContextFactory.CreateDbContext())
-            {
-                context.Database.EnsureCreated();  // Ensure the database for FirstDbContext is created.
-                await context.CLEAN_TABLES_DO_NOT_USE_IN_PRODUCTION();  // Clean up table records in FirstDbContext.
-            }
-
-            // Ensure SecondDbContext database is created and clean up any existing data.
-            var secondDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<SecondDbContext>>();
-            using (var context = secondDbContextFactory.CreateDbContext())
-            {
-                context.Database.EnsureCreated();  // Ensure the database for SecondDbContext is created.
-                await context.CLEAN_TABLES_DO_NOT_USE_IN_PRODUCTION();  // Clean up table records in SecondDbContext.
-            }
+            build.Services.EnsureDatabaseExists<FirstDbContext>();
+            build.Services.EnsureDatabaseExists<SecondDbContext>();
 
             // Begin a new request scope for dependency injection.
             using (IServiceScope requestScope = build.Services.CreateScope())
@@ -594,7 +542,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
         {
             services.AddDbContextFactory<FirstDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "PartialCommitAndRollback_FirstDb";  // Set the initial catalog.
                 cnnBuilder.TrustServerCertificate = true;
                 cnnBuilder.MultipleActiveResultSets = true;
@@ -607,7 +555,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
 
             services.AddDbContextFactory<SecondDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "PartialCommitAndRollback_SecondDb";  // Set the initial catalog.
                 cnnBuilder.TrustServerCertificate = true;
                 cnnBuilder.MultipleActiveResultSets = true;
@@ -623,19 +571,8 @@ public partial class UnitOfWorkTests : IAsyncLifetime
 
         using (IHost build = host.Build())
         {
-            var firstDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<FirstDbContext>>();
-            using (var context = firstDbContextFactory.CreateDbContext())
-            {
-                context.Database.EnsureCreated();
-                await context.CLEAN_TABLES_DO_NOT_USE_IN_PRODUCTION();
-            }
-
-            var secondDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<SecondDbContext>>();
-            using (var context = secondDbContextFactory.CreateDbContext())
-            {
-                context.Database.EnsureCreated();
-                await context.CLEAN_TABLES_DO_NOT_USE_IN_PRODUCTION();
-            }
+            build.Services.EnsureDatabaseExists<FirstDbContext>();
+            build.Services.EnsureDatabaseExists<SecondDbContext>();
 
             using (IServiceScope requestScope = build.Services.CreateScope())
             using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
@@ -728,7 +665,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
         {
             services.AddDbContextFactory<FirstDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "InterleavedOperations_FirstDb";  // Set the initial catalog.
                 cnnBuilder.TrustServerCertificate = true;
                 cnnBuilder.MultipleActiveResultSets = true;
@@ -741,7 +678,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
 
             services.AddDbContextFactory<SecondDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "InterleavedOperations_SecondDb";  // Set the initial catalog.
                 cnnBuilder.TrustServerCertificate = true;
                 cnnBuilder.MultipleActiveResultSets = true;
@@ -757,19 +694,8 @@ public partial class UnitOfWorkTests : IAsyncLifetime
 
         using (IHost build = host.Build())
         {
-            var firstDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<FirstDbContext>>();
-            using (var context = firstDbContextFactory.CreateDbContext())
-            {
-                context.Database.EnsureCreated();
-                await context.CLEAN_TABLES_DO_NOT_USE_IN_PRODUCTION();
-            }
-
-            var secondDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<SecondDbContext>>();
-            using (var context = secondDbContextFactory.CreateDbContext())
-            {
-                context.Database.EnsureCreated();
-                await context.CLEAN_TABLES_DO_NOT_USE_IN_PRODUCTION();
-            }
+            build.Services.EnsureDatabaseExists<FirstDbContext>();
+            build.Services.EnsureDatabaseExists<SecondDbContext>();
 
             using (IServiceScope requestScope = build.Services.CreateScope())
             using (var unitOfWork = requestScope.ServiceProvider.GetRequiredService<IUnitOfWork>())
@@ -834,7 +760,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
             // Configure TestApplicationDbContext with SQL Server settings.
             services.AddDbContextFactory<ThirdDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "Case_UnitOfWork_NestedTransactionsWithSavePoints";  // Set the initial catalog (database name).
                 cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
                 cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
@@ -851,13 +777,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
         // Build the IHost and get the required services for testing.
         using (IHost build = host.Build())
         {
-            // Ensure TestApplicationDbContext database is created and clean up any existing data.
-            var dbContextFactory = build.Services.GetRequiredService<IDbContextFactory<ThirdDbContext>>();
-            using (var context = dbContextFactory.CreateDbContext())
-            {
-                context.Database.EnsureCreated();  // Ensure the database for TestApplicationDbContext is created.
-                await context.CLEAN_TABLES_DO_NOT_USE_IN_PRODUCTION();  // Clean up table records in TestApplicationDbContext.
-            }
+            build.Services.EnsureDatabaseExists<ThirdDbContext>();
 
             // Begin a new request scope for dependency injection.
             using (IServiceScope requestScope = build.Services.CreateScope())

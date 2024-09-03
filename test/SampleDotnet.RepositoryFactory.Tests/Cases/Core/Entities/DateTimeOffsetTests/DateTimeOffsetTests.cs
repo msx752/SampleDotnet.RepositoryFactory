@@ -1,27 +1,15 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Core.Entities.DateTimeOffsetTests;
 
-public class DateTimeOffsetTests : IAsyncLifetime
+[Collection("Shared Collection")]
+public class DateTimeOffsetTests 
 {
-    private readonly MsSqlContainer _sqlContainer;
+    // A container for running SQL Server in Docker for testing purposes.
+    private readonly SharedContainerFixture _shared;
 
-    public DateTimeOffsetTests()
+    // Constructor initializes the SQL container with specific configurations.
+    public DateTimeOffsetTests(SharedContainerFixture fixture)
     {
-        _sqlContainer = new MsSqlBuilder()
-            .WithPassword("Admin123!")  // Set the password for the SQL Server.
-            .WithCleanUp(true)        // automatically clean up the container.
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))  // Wait strategy to ensure SQL Server is ready.
-            .Build();  // Build the container.
-    }
-
-    public async Task InitializeAsync()
-    {
-        await _sqlContainer.StartAsync();
-    }
-
-    public async Task DisposeAsync()
-    {
-        await _sqlContainer.StopAsync();
-        await _sqlContainer.DisposeAsync();
+        _shared = fixture;
     }
 
     [Fact]
@@ -31,7 +19,7 @@ public class DateTimeOffsetTests : IAsyncLifetime
         {
             services.AddDbContextFactory<DateTimeOffsetDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "Case_set_CreatedAt_DateTimeOffset";
                 cnnBuilder.TrustServerCertificate = true;
                 cnnBuilder.MultipleActiveResultSets = true;
@@ -48,12 +36,7 @@ public class DateTimeOffsetTests : IAsyncLifetime
 
         using (IHost build = host.Build())
         {
-            var testApplicationDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<DateTimeOffsetDbContext>>();
-            using (var context = testApplicationDbContextFactory.CreateDbContext())
-            {
-                context.Database.EnsureCreated();
-                await context.CLEAN_TABLES_DO_NOT_USE_IN_PRODUCTION();
-            }
+            build.Services.EnsureDatabaseExists<DateTimeOffsetDbContext>();
 
             //scope1
             using (IServiceScope scope = build.Services.CreateScope())
@@ -81,7 +64,7 @@ public class DateTimeOffsetTests : IAsyncLifetime
         {
             services.AddDbContextFactory<DateTimeOffsetDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "Case_set_UpdatedAt_DateTimeOffset";
                 cnnBuilder.TrustServerCertificate = true;
                 cnnBuilder.MultipleActiveResultSets = true;
@@ -98,12 +81,7 @@ public class DateTimeOffsetTests : IAsyncLifetime
 
         using (IHost build = host.Build())
         {
-            var testApplicationDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<DateTimeOffsetDbContext>>();
-            using (var context = testApplicationDbContextFactory.CreateDbContext())
-            {
-                context.Database.EnsureCreated();
-                await context.CLEAN_TABLES_DO_NOT_USE_IN_PRODUCTION();
-            }
+            build.Services.EnsureDatabaseExists<DateTimeOffsetDbContext>();
 
             //scope1
             using (IServiceScope scope = build.Services.CreateScope())

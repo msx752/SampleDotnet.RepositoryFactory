@@ -1,27 +1,15 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Infrastructure.Data.DbContextTests
 {
-    public class DbContextDisposeTests : IAsyncLifetime
+    [Collection("Shared Collection")]
+    public class DbContextDisposeTests
     {
-        private readonly MsSqlContainer _sqlContainer;
+        // A container for running SQL Server in Docker for testing purposes.
+        private readonly SharedContainerFixture _shared;
 
-        public DbContextDisposeTests()
+        // Constructor initializes the SQL container with specific configurations.
+        public DbContextDisposeTests(SharedContainerFixture fixture)
         {
-            _sqlContainer = new MsSqlBuilder()
-                .WithPassword("Admin123!")  // Set the password for the SQL Server.
-                .WithCleanUp(true)        // automatically clean up the container.
-                .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1433))  // Wait strategy to ensure SQL Server is ready.
-                .Build();  // Build the container.
-        }
-
-        public async Task InitializeAsync()
-        {
-            await _sqlContainer.StartAsync();
-        }
-
-        public async Task DisposeAsync()
-        {
-            await _sqlContainer.StopAsync();
-            await _sqlContainer.DisposeAsync();
+            _shared = fixture;
         }
 
         [Fact]
@@ -31,7 +19,7 @@
             {
                 services.AddDbContextFactory<TestDisposeDbContext>(options =>
                 {
-                    var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                    var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                     cnnBuilder.InitialCatalog = "Case_DbContext_Should_Not_Throw_ObjectDisposedException1";
                     cnnBuilder.TrustServerCertificate = true;
                     cnnBuilder.MultipleActiveResultSets = true;
@@ -48,12 +36,7 @@
 
             using (IHost build = host.Build())
             {
-                var TestDisposeDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<TestDisposeDbContext>>();
-                using (var context = TestDisposeDbContextFactory.CreateDbContext())
-                {
-                    context.Database.EnsureCreated();
-                    await context.CLEAN_TABLES_DO_NOT_USE_IN_PRODUCTION();
-                }
+                build.Services.EnsureDatabaseExists<TestDisposeDbContext>();
 
                 //request scope
                 using (IServiceScope requestScope = build.Services.CreateScope())
@@ -92,7 +75,7 @@
             {
                 services.AddDbContextFactory<TestDisposeDbContext>(options =>
                 {
-                    var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
+                    var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
                     cnnBuilder.InitialCatalog = "Case_Repository_Should_Not_Throw_ObjectDisposedException2";
                     cnnBuilder.TrustServerCertificate = true;
                     cnnBuilder.MultipleActiveResultSets = true;
@@ -109,12 +92,7 @@
 
             using (IHost build = host.Build())
             {
-                var TestDisposeDbContextFactory = build.Services.GetRequiredService<IDbContextFactory<TestDisposeDbContext>>();
-                using (var context = TestDisposeDbContextFactory.CreateDbContext())
-                {
-                    context.Database.EnsureCreated();
-                    await context.CLEAN_TABLES_DO_NOT_USE_IN_PRODUCTION();
-                }
+                build.Services.EnsureDatabaseExists<TestDisposeDbContext>();
 
                 //request scope 1
                 using (IServiceScope requestScope = build.Services.CreateScope())
