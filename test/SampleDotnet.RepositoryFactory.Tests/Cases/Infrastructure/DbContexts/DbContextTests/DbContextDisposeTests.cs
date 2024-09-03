@@ -42,6 +42,8 @@
                     options.EnableSensitiveDataLogging();
                     options.EnableDetailedErrors();
                 });
+
+                services.AddRepositoryFactory(ServiceLifetime.Scoped);
             });
 
             using (IHost build = host.Build())
@@ -101,6 +103,8 @@
                     options.EnableSensitiveDataLogging();
                     options.EnableDetailedErrors();
                 });
+
+                services.AddRepositoryFactory(ServiceLifetime.Scoped);
             });
 
             using (IHost build = host.Build())

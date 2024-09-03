@@ -64,6 +64,7 @@ public class SagaTests : IAsyncLifetime
 
             services.AddTransient<ICartService, CartService>();
             services.AddTransient<IPaymentService, PaymentService>();
+            services.AddRepositoryFactory(ServiceLifetime.Transient);
 
             services.AddMassTransitTestHarness(x =>
             {

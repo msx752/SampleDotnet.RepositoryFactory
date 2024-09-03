@@ -42,6 +42,8 @@ public class DateTimeOffsetTests : IAsyncLifetime
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
+
+            services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
 
         using (IHost build = host.Build())
@@ -90,6 +92,8 @@ public class DateTimeOffsetTests : IAsyncLifetime
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
+
+            services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
 
         using (IHost build = host.Build())

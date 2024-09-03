@@ -66,6 +66,8 @@ public partial class UnitOfWorkTests : IAsyncLifetime
                 options.EnableSensitiveDataLogging();  // Enable logging of sensitive data (for debugging purposes).
                 options.EnableDetailedErrors();  // Enable detailed error messages (for debugging purposes).
             });
+
+            services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
 
         // Build the IHost and get the required services for testing.
@@ -248,6 +250,8 @@ public partial class UnitOfWorkTests : IAsyncLifetime
                 options.EnableSensitiveDataLogging();  // Enable logging of sensitive data (for debugging purposes).
                 options.EnableDetailedErrors();  // Enable detailed error messages (for debugging purposes).
             });
+
+            services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
 
         // Build the IHost and get the required services for testing.
@@ -327,6 +331,8 @@ public partial class UnitOfWorkTests : IAsyncLifetime
                 options.EnableSensitiveDataLogging();  // Enable sensitive data logging.
                 options.EnableDetailedErrors();  // Enable detailed error messages.
             });
+
+            services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
 
         using (IHost build = host.Build())
@@ -454,6 +460,8 @@ public partial class UnitOfWorkTests : IAsyncLifetime
                 options.EnableSensitiveDataLogging();  // Enable logging of sensitive data (for debugging purposes).
                 options.EnableDetailedErrors();  // Enable detailed error messages (for debugging purposes).
             });
+
+            services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
 
         // Build the IHost and get the required services for testing.
@@ -609,6 +617,8 @@ public partial class UnitOfWorkTests : IAsyncLifetime
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
+
+            services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
 
         using (IHost build = host.Build())
@@ -741,6 +751,8 @@ public partial class UnitOfWorkTests : IAsyncLifetime
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
+
+            services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
 
         using (IHost build = host.Build())
@@ -832,6 +844,8 @@ public partial class UnitOfWorkTests : IAsyncLifetime
                 options.EnableSensitiveDataLogging();  // Enable logging of sensitive data (for debugging purposes).
                 options.EnableDetailedErrors();  // Enable detailed error messages (for debugging purposes).
             });
+
+            services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
 
         // Build the IHost and get the required services for testing.
