@@ -6,28 +6,6 @@
 public static class RepositoryExtensions
 {
     /// <summary>
-    /// Adds a DbContext factory to the service collection with the specified service lifetime.
-    /// </summary>
-    /// <typeparam name="TContext">The type of the DbContext to add.</typeparam>
-    /// <param name="serviceCollection">The service collection to which the DbContext factory will be added.</param>
-    /// <param name="optionsAction">An optional action to configure the DbContext options.</param>
-    /// <param name="dbContextFactoryLifetime">The lifetime of the DbContext factory to add. Default is Singleton.</param>
-    /// <returns>The modified service collection.</returns>
-    public static IServiceCollection AddDbContextFactoryWithUnitOfWork<TContext>(
-        this IServiceCollection serviceCollection,
-        Action<DbContextOptionsBuilder>? optionsAction = null,
-        ServiceLifetime dbContextFactoryLifetime = ServiceLifetime.Singleton)
-        where TContext : DbContext
-    {
-        // Adds a factory for creating instances of the specified DbContext type with the provided options.
-        // The DbContextFactory is added to the service collection with the specified lifetime.
-        // This allows the application to create instances of DbContext on demand, using the configured options.
-        EntityFrameworkServiceCollectionExtensions.AddDbContextFactory<TContext, Microsoft.EntityFrameworkCore.Internal.DbContextFactory<TContext>>(serviceCollection, optionsAction, dbContextFactoryLifetime);
-
-        return serviceCollection;
-    }
-
-    /// <summary>
     /// Adds a repository factory and associated services to the service collection with the specified service lifetime.
     /// Ensures that only one instance of each service type is registered at a time by removing any existing registrations.
     /// </summary>

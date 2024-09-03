@@ -29,7 +29,7 @@
         {
             IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
             {
-                services.AddDbContextFactoryWithUnitOfWork<TestDisposeDbContext>(options =>
+                services.AddDbContextFactory<TestDisposeDbContext>(options =>
                 {
                     var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                     cnnBuilder.InitialCatalog = "Case_DbContext_Should_Not_Throw_ObjectDisposedException1";
@@ -90,7 +90,7 @@
         {
             IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
             {
-                services.AddDbContextFactoryWithUnitOfWork<TestDisposeDbContext>(options =>
+                services.AddDbContextFactory<TestDisposeDbContext>(options =>
                 {
                     var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                     cnnBuilder.InitialCatalog = "Case_Repository_Should_Not_Throw_ObjectDisposedException2";

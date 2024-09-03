@@ -40,7 +40,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
             // Configure FirstDbContext with SQL Server settings.
-            services.AddDbContextFactoryWithUnitOfWork<FirstDbContext>(options =>
+            services.AddDbContextFactory<FirstDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "FirstDbContext_Case_UnitOfWork_CommitAndRollback";  // Set the initial catalog (database name).
@@ -54,7 +54,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
             });
 
             // Configure SecondDbContext with SQL Server settings.
-            services.AddDbContextFactoryWithUnitOfWork<SecondDbContext>(options =>
+            services.AddDbContextFactory<SecondDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "SecondDbContext_Case_UnitOfWork_CommitAndRollback";  // Set the initial catalog (database name).
@@ -238,7 +238,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
             // Configure TestApplicationDbContext with SQL Server settings.
-            services.AddDbContextFactoryWithUnitOfWork<ThirdDbContext>(options =>
+            services.AddDbContextFactory<ThirdDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "Case_UnitOfWork_Do_Not_Skip_DetectChanges";  // Set the initial catalog (database name).
@@ -319,7 +319,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
             // Configure DbContextFactory and UnitOfWork for the test.
-            services.AddDbContextFactoryWithUnitOfWork<ThirdDbContext>(options =>
+            services.AddDbContextFactory<ThirdDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "Case_UnitOfWork_Rollback";  // Set the database name.
@@ -434,7 +434,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
             // Configure FirstDbContext with SQL Server settings.
-            services.AddDbContextFactoryWithUnitOfWork<FirstDbContext>(options =>
+            services.AddDbContextFactory<FirstDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "TwoDifferent_DbContext_Rollback_FirstDb";  // Set the initial catalog (database name).
@@ -448,7 +448,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
             });
 
             // Configure SecondDbContext with SQL Server settings.
-            services.AddDbContextFactoryWithUnitOfWork<SecondDbContext>(options =>
+            services.AddDbContextFactory<SecondDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "TwoDifferent_DbContext_Rollback_SecondDb";  // Set the initial catalog (database name).
@@ -592,7 +592,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
         // Create an IHostBuilder and configure services for testing.
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            services.AddDbContextFactoryWithUnitOfWork<FirstDbContext>(options =>
+            services.AddDbContextFactory<FirstDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "PartialCommitAndRollback_FirstDb";  // Set the initial catalog.
@@ -605,7 +605,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
                 options.EnableDetailedErrors();
             });
 
-            services.AddDbContextFactoryWithUnitOfWork<SecondDbContext>(options =>
+            services.AddDbContextFactory<SecondDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "PartialCommitAndRollback_SecondDb";  // Set the initial catalog.
@@ -726,7 +726,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
         // Create an IHostBuilder and configure services for testing.
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            services.AddDbContextFactoryWithUnitOfWork<FirstDbContext>(options =>
+            services.AddDbContextFactory<FirstDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "InterleavedOperations_FirstDb";  // Set the initial catalog.
@@ -739,7 +739,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
                 options.EnableDetailedErrors();
             });
 
-            services.AddDbContextFactoryWithUnitOfWork<SecondDbContext>(options =>
+            services.AddDbContextFactory<SecondDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "InterleavedOperations_SecondDb";  // Set the initial catalog.
@@ -832,7 +832,7 @@ public partial class UnitOfWorkTests : IAsyncLifetime
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
             // Configure TestApplicationDbContext with SQL Server settings.
-            services.AddDbContextFactoryWithUnitOfWork<ThirdDbContext>(options =>
+            services.AddDbContextFactory<ThirdDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "Case_UnitOfWork_NestedTransactionsWithSavePoints";  // Set the initial catalog (database name).

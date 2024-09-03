@@ -29,7 +29,7 @@ public class DateTimeOffsetAsyncTests : IAsyncLifetime
     {
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            services.AddDbContextFactoryWithUnitOfWork<DateTimeOffsetDbContext>(options =>
+            services.AddDbContextFactory<DateTimeOffsetDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "Case_set_CreatedAt_DateTimeOffsetAsync";
@@ -80,7 +80,7 @@ public class DateTimeOffsetAsyncTests : IAsyncLifetime
     {
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            services.AddDbContextFactoryWithUnitOfWork<DateTimeOffsetDbContext>(options =>
+            services.AddDbContextFactory<DateTimeOffsetDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "Case_set_UpdatedAt_DateTimeOffsetAsync";
