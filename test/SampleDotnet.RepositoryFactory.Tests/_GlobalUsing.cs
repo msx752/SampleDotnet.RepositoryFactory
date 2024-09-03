@@ -24,6 +24,7 @@ global using SampleDotnet.RepositoryFactory.Tests.Cases.Core.Entities.UnitOfWork
 global using SampleDotnet.RepositoryFactory.Tests.Cases.Infrastructure.DbContexts.DbContextModels.DbContexts;
 global using SampleDotnet.RepositoryFactory.Tests.Cases.Infrastructure.DbContexts.DbContextModels.Entities;
 global using SampleDotnet.RepositoryFactory.Tests.Extensions;
+global using SampleDotnet.RepositoryFactory.Tests.Shared;
 global using Shouldly;
 global using System.ComponentModel.DataAnnotations;
 global using System.ComponentModel.DataAnnotations.Schema;
