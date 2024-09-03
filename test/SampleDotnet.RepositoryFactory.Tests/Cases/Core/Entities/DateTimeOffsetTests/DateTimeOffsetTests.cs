@@ -29,7 +29,7 @@ public class DateTimeOffsetTests : IAsyncLifetime
     {
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            services.AddDbContextFactoryWithUnitOfWork<DateTimeOffsetDbContext>(options =>
+            services.AddDbContextFactory<DateTimeOffsetDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "Case_set_CreatedAt_DateTimeOffset";
@@ -42,6 +42,8 @@ public class DateTimeOffsetTests : IAsyncLifetime
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
+
+            services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
 
         using (IHost build = host.Build())
@@ -77,7 +79,7 @@ public class DateTimeOffsetTests : IAsyncLifetime
     {
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            services.AddDbContextFactoryWithUnitOfWork<DateTimeOffsetDbContext>(options =>
+            services.AddDbContextFactory<DateTimeOffsetDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "Case_set_UpdatedAt_DateTimeOffset";
@@ -90,6 +92,8 @@ public class DateTimeOffsetTests : IAsyncLifetime
                 options.EnableSensitiveDataLogging();
                 options.EnableDetailedErrors();
             });
+
+            services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
 
         using (IHost build = host.Build())

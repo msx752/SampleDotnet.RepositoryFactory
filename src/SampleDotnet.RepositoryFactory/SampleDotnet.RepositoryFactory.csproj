@@ -11,8 +11,8 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<id>SampleDotnet.RepositoryFactory</id>
 		<Title>SampleDotnet.RepositoryFactory</Title>
-		<Description>EFCore UnitOfWork Pattern used on DbContextFactory for the multiple DbContexts</Description>
-		<Summary></Summary>
+		<Description>EF Core Unit of Work pattern combined with DbContextFactory to efficiently manage multiple DbContexts in .NET applications. This package supports various service lifetimes (Scoped, Transient, Singleton) and provides a flexible, robust solution for handling database operations with automatic transaction management and repository patterns. Ideal for projects requiring concurrent data access and simplified entity management.</Description>
+		<Summary>The SampleDotnet.RepositoryFactory package now uses the standard AddDbContextFactory method for registering DbContext factories and supports configurable service lifetimes (Scoped, Transient, Singleton). Most features are in preview, and feedback is encouraged. Documentation has been updated with new service registration examples and transaction management best practices.</Summary>
 		<Authors>Mustafa Salih ASLIM;</Authors>
 		<PackageProjectUrl>https://github.com/msx752/SampleDotnet.RepositoryFactory</PackageProjectUrl>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
@@ -21,7 +21,7 @@
 		<EnableNETAnalyzers>True</EnableNETAnalyzers>
 		<SignAssembly>False</SignAssembly>
 		<PackageIcon>wfc2.png</PackageIcon>
-		<PackageTags>dotnet net6 net7 net9 unitofwork pattern repository factory multiple dbcontexts</PackageTags>
+		<PackageTags>dotnet net6 net7 net8 unit-of-work repository-pattern factory-pattern multiple-dbcontexts</PackageTags>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
 		<IncludeSymbols>True</IncludeSymbols>
@@ -31,8 +31,8 @@
 		<ContinuousIntegrationBuild>True</ContinuousIntegrationBuild>
 		<EmbedUntrackedSources>True</EmbedUntrackedSources>
 		<Copyright>Copyright 2023</Copyright>
-		<AssemblyVersion>3.0.3.0</AssemblyVersion>
-		<Version>3.0.3-preview1</Version>
+		<AssemblyVersion>3.1.0.0</AssemblyVersion>
+		<Version>3.1.0-preview2</Version>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 	</PropertyGroup>
 

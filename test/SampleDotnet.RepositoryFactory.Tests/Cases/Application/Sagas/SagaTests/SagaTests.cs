@@ -35,7 +35,7 @@ public class SagaTests : IAsyncLifetime
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
             // Configure CartDbContext with SQL Server settings.
-            services.AddDbContextFactoryWithUnitOfWork<CartDbContext>(options =>
+            services.AddDbContextFactory<CartDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "CartDbContext_DistributedTransaction_SagaCommitAndRollback";
@@ -49,7 +49,7 @@ public class SagaTests : IAsyncLifetime
             });
 
             // Configure SecondDbContext with SQL Server settings.
-            services.AddDbContextFactoryWithUnitOfWork<PaymentDbContext>(options =>
+            services.AddDbContextFactory<PaymentDbContext>(options =>
             {
                 var cnnBuilder = new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString());
                 cnnBuilder.InitialCatalog = "PaymentDbContext_DistributedTransaction_SagaCommitAndRollback";  // Set the initial catalog (database name).
@@ -64,6 +64,7 @@ public class SagaTests : IAsyncLifetime
 
             services.AddTransient<ICartService, CartService>();
             services.AddTransient<IPaymentService, PaymentService>();
+            services.AddRepositoryFactory(ServiceLifetime.Transient);
 
             services.AddMassTransitTestHarness(x =>
             {
