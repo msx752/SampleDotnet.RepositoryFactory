@@ -1,4 +1,8 @@
-﻿/// <summary>
+﻿using Microsoft.Extensions.DependencyInjection.Extensions;
+
+namespace SampleDotnet.RepositoryFactory;
+
+/// <summary>
 /// Extension methods for adding DbContext factory and UnitOfWork to the service collection.
 /// </summary>
 public static class RepositoryExtensions
@@ -22,6 +26,9 @@ public static class RepositoryExtensions
 
         // Adds the UnitOfWork as a scoped service if it hasn't already been added.
         Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddScoped<IUnitOfWork, UnitOfWork>(serviceCollection);
+        Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddScoped<IDbContextManager, DbContextManager>(serviceCollection);
+        Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddScoped<IRepositoryFactory, Repositories.Factories.RepositoryFactory>(serviceCollection);
+        Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddScoped<ITransactionManager, TransactionManager>(serviceCollection);
 
         return serviceCollection;
     }

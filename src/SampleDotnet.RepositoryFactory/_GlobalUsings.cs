@@ -1,8 +1,15 @@
 ﻿global using Microsoft.EntityFrameworkCore;
 global using Microsoft.EntityFrameworkCore.ChangeTracking;
+global using Microsoft.EntityFrameworkCore.Infrastructure;
 global using Microsoft.Extensions.DependencyInjection;
-global using SampleDotnet.RepositoryFactory;
+global using SampleDotnet.RepositoryFactory.Entities.Database;
+global using SampleDotnet.RepositoryFactory.Entities.Exceptions;
 global using SampleDotnet.RepositoryFactory.Interfaces;
+global using SampleDotnet.RepositoryFactory.Interfaces.Core;
+global using SampleDotnet.RepositoryFactory.Interfaces.Repositories;
+global using SampleDotnet.RepositoryFactory.Interfaces.Utilities;
+global using SampleDotnet.RepositoryFactory.Repositories.Base;
+global using SampleDotnet.RepositoryFactory.Repositories.Implementations;
 global using System.Collections.Concurrent;
-global using System.Data;
 global using System.Linq.Expressions;
+global using System.Runtime.Serialization;
