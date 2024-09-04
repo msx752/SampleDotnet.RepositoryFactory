@@ -24,17 +24,11 @@ public class UnitOfWorkTests
         // Create an IHostBuilder and configure services to use two different DbContexts with UnitOfWork.
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            // Configure FirstDbContext with SQL Server settings.
             services.AddDbContextFactory<FirstDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "FirstDbContext_Case_UnitOfWork_CommitAndRollback");
-            });
+                options.UseTestSqlConnection(_shared, "FirstDbContext_Case_UnitOfWork_CommitAndRollback"));
 
-            // Configure SecondDbContext with SQL Server settings.
             services.AddDbContextFactory<SecondDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "SecondDbContext_Case_UnitOfWork_CommitAndRollback");
-            });
+                options.UseTestSqlConnection(_shared, "SecondDbContext_Case_UnitOfWork_CommitAndRollback"));
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
@@ -193,11 +187,8 @@ public class UnitOfWorkTests
         // Create an IHostBuilder and configure services to use TestApplicationDbContext with UnitOfWork.
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            // Configure TestApplicationDbContext with SQL Server settings.
             services.AddDbContextFactory<ThirdDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "Case_UnitOfWork_Do_Not_Skip_DetectChanges");
-            });
+                options.UseTestSqlConnection(_shared, "Case_UnitOfWork_Do_Not_Skip_DetectChanges"));
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
@@ -260,11 +251,8 @@ public class UnitOfWorkTests
         // Setup an IHostBuilder to configure services for the test.
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            // Configure DbContextFactory and UnitOfWork for the test.
             services.AddDbContextFactory<ThirdDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "Case_UnitOfWork_Rollback");
-            });
+                options.UseTestSqlConnection(_shared, "Case_UnitOfWork_Rollback"));
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
@@ -362,17 +350,11 @@ public class UnitOfWorkTests
         // Create an IHostBuilder and configure services to use two different DbContexts with UnitOfWork.
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            // Configure FirstDbContext with SQL Server settings.
             services.AddDbContextFactory<FirstDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "TwoDifferent_DbContext_Rollback_FirstDb");
-            });
+                options.UseTestSqlConnection(_shared, "TwoDifferent_DbContext_Rollback_FirstDb"));
 
-            // Configure SecondDbContext with SQL Server settings.
             services.AddDbContextFactory<SecondDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "TwoDifferent_DbContext_Rollback_SecondDb");
-            });
+                options.UseTestSqlConnection(_shared, "TwoDifferent_DbContext_Rollback_SecondDb"));
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
@@ -493,14 +475,10 @@ public class UnitOfWorkTests
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
             services.AddDbContextFactory<FirstDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "PartialCommitAndRollback_FirstDb");
-            });
+                options.UseTestSqlConnection(_shared, "PartialCommitAndRollback_FirstDb"));
 
             services.AddDbContextFactory<SecondDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "PartialCommitAndRollback_SecondDb");
-            });
+                options.UseTestSqlConnection(_shared, "PartialCommitAndRollback_SecondDb"));
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
@@ -600,14 +578,10 @@ public class UnitOfWorkTests
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
             services.AddDbContextFactory<FirstDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "InterleavedOperations_FirstDb");
-            });
+                options.UseTestSqlConnection(_shared, "InterleavedOperations_FirstDb"));
 
             services.AddDbContextFactory<SecondDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "InterleavedOperations_SecondDb");
-            });
+                options.UseTestSqlConnection(_shared, "InterleavedOperations_SecondDb"));
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
@@ -677,11 +651,8 @@ public class UnitOfWorkTests
         // Create an IHostBuilder and configure services to use TestApplicationDbContext with UnitOfWork.
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            // Configure TestApplicationDbContext with SQL Server settings.
             services.AddDbContextFactory<ThirdDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "Case_UnitOfWork_NestedTransactionsWithSavePoints");
-            });
+                options.UseTestSqlConnection(_shared, "Case_UnitOfWork_NestedTransactionsWithSavePoints"));
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });

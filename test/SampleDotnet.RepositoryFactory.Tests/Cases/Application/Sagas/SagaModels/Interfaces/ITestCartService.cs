@@ -1,8 +1,8 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Application.Sagas.SagaModels.Interfaces
 {
-    public interface ICartService
+    public interface ITestCartService
     {
-        Task ProcessCart(Guid transactionId, List<CartItemEntity> items);
+        Task ProcessCart(Guid transactionId, List<TestCartItemEntity> items);
 
         Task RollbackCart(Guid transactionId);
     }

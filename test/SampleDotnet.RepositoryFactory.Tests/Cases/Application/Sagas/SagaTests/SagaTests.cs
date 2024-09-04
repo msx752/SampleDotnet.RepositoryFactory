@@ -18,43 +18,37 @@ public class SagaTests
         // Create an IHostBuilder and configure services to use DbContexts and messaging.
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            // Configure CartDbContext with SQL Server settings for testing.
-            services.AddDbContextFactory<CartDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "CartDbContext_Saga_ShouldCommitOnSuccess");
-            });
+            services.AddDbContextFactory<TestCartDbContext>(options =>
+                options.UseTestSqlConnection(_shared, "CartDbContext_Saga_ShouldCommitOnSuccess"));
 
-            // Configure PaymentDbContext with SQL Server settings for testing.
-            services.AddDbContextFactory<PaymentDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "PaymentDbContext_Saga_ShouldCommitOnSuccess");
-            });
+            services.AddDbContextFactory<TestPaymentDbContext>(options =>
+                options.UseTestSqlConnection(_shared, "PaymentDbContext_Saga_ShouldCommitOnSuccess"));
 
             // Register application services.
-            services.AddTransient<ICartService, CartService>();
-            services.AddTransient<IPaymentService, PaymentService>();
+            services.AddTransient<ITestCartService, TestCartService_Success>();
+            services.AddTransient<ITestPaymentService, TestPaymentService>();
             services.AddRepositoryFactory(ServiceLifetime.Transient);
 
             // Configure MassTransit with test harness for in-memory transport.
             services.AddMassTransitTestHarness(x =>
             {
-                x.AddConsumer<CartConsumer>();
-                x.AddConsumer<PaymentConsumer>();
+                x.AddConsumer<TestCartConsumer>();
+                x.AddConsumer<TestPaymentConsumer>();
 
                 x.UsingInMemory((context, cfg) =>
                 {
                     cfg.ConfigureEndpoints(context);
                 });
 
-                x.AddSagaStateMachine<TransactionStateMachine, TransactionState>()
+                x.AddSagaStateMachine<TestTransactionStateMachine, TestTransactionState>()
                     .InMemoryRepository();
             });
         });
 
         using (IHost build = host.Build())
         {
-            build.Services.EnsureDatabaseExists<CartDbContext>();
-            build.Services.EnsureDatabaseExists<PaymentDbContext>();
+            build.Services.EnsureDatabaseExists<TestCartDbContext>();
+            build.Services.EnsureDatabaseExists<TestPaymentDbContext>();
 
             var harness = build.Services.CreateScope().ServiceProvider.GetRequiredService<ITestHarness>();
             await harness.Start();
@@ -63,11 +57,30 @@ public class SagaTests
             {
                 var correlationId = Guid.NewGuid();
 
-                await PublishAndVerifyStartTransaction(harness, correlationId);
-                await VerifySagaProcessingState(harness, correlationId);
-                await SimulateAndVerifyCompletePayment(harness, correlationId);
-                await SimulateAndVerifyCompleteCart(harness, correlationId);
-                await VerifySagaCompletedState(harness, correlationId);
+
+                await harness.Bus.Publish(new StartTransactionEvent(correlationId, 100M, new() { new() { ProductId = Guid.NewGuid(), Quantity = 2, Price = 20M } }));
+                (await harness.Consumed.Any<StartTransactionEvent>()).ShouldBeTrue();
+
+
+                var sagaHarness = harness.GetSagaStateMachineHarness<TestTransactionStateMachine, TestTransactionState>();
+                var instance = sagaHarness.Created.ContainsInState(correlationId, sagaHarness.StateMachine, sagaHarness.StateMachine.Processing);
+                instance.ShouldNotBeNull();
+
+
+                await harness.Bus.Publish(new CompletePaymentEvent(correlationId));
+                (await harness.Consumed.Any<CompletePaymentEvent>()).ShouldBeTrue();
+
+
+                (await harness.Published.Any<StartCartEvent>()).ShouldBeTrue();
+
+
+                await harness.Bus.Publish(new CompleteCartEvent(correlationId));
+                (await harness.Consumed.Any<CompleteCartEvent>()).ShouldBeTrue();
+
+
+                sagaHarness = harness.GetSagaStateMachineHarness<TestTransactionStateMachine, TestTransactionState>();
+                instance = sagaHarness.Created.ContainsInState(correlationId, sagaHarness.StateMachine, sagaHarness.StateMachine.Completed);
+                instance.ShouldNotBeNull();
             }
         }
     }
@@ -79,42 +92,38 @@ public class SagaTests
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
             // Configure CartDbContext with SQL Server settings for testing.
-            services.AddDbContextFactory<CartDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "CartDbContext_Saga_ShouldRollbackOnFailure");
-            });
+            services.AddDbContextFactory<TestCartDbContext>(options =>
+                options.UseTestSqlConnection(_shared, "CartDbContext_Saga_ShouldRollbackOnFailure"));
 
             // Configure PaymentDbContext with SQL Server settings for testing.
-            services.AddDbContextFactory<PaymentDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "PaymentDbContext_Saga_ShouldRollbackOnFailure");
-            });
+            services.AddDbContextFactory<TestPaymentDbContext>(options => 
+                options.UseTestSqlConnection(_shared, "PaymentDbContext_Saga_ShouldRollbackOnFailure"));
 
             // Register application services.
-            services.AddTransient<ICartService, CartService>();
-            services.AddTransient<IPaymentService, PaymentService>();
+            services.AddTransient<ITestCartService, TestCartService_Fail>();
+            services.AddTransient<ITestPaymentService, TestPaymentService>();
             services.AddRepositoryFactory(ServiceLifetime.Transient);
 
             // Configure MassTransit with test harness for in-memory transport.
             services.AddMassTransitTestHarness(x =>
             {
-                x.AddConsumer<CartConsumer>();
-                x.AddConsumer<PaymentConsumer>();
+                x.AddConsumer<TestCartConsumer>();
+                x.AddConsumer<TestPaymentConsumer>();
 
                 x.UsingInMemory((context, cfg) =>
                 {
                     cfg.ConfigureEndpoints(context);
                 });
 
-                x.AddSagaStateMachine<TransactionStateMachine, TransactionState>()
+                x.AddSagaStateMachine<TestTransactionStateMachine, TestTransactionState>()
                     .InMemoryRepository();
             });
         });
 
         using (IHost build = host.Build())
         {
-            build.Services.EnsureDatabaseExists<CartDbContext>();
-            build.Services.EnsureDatabaseExists<PaymentDbContext>();
+            build.Services.EnsureDatabaseExists<TestCartDbContext>();
+            build.Services.EnsureDatabaseExists<TestPaymentDbContext>();
 
             var harness = build.Services.CreateScope().ServiceProvider.GetRequiredService<ITestHarness>();
             await harness.Start();
@@ -123,85 +132,42 @@ public class SagaTests
             {
                 var correlationId = Guid.NewGuid();
 
-                await PublishAndVerifyStartTransaction(harness, correlationId);
-                await VerifySagaProcessingState(harness, correlationId);
-                await SimulateAndVerifyCompletePayment(harness, correlationId);
-                await SimulateAndVerifyCompensation(harness, correlationId);
-                await VerifySagaRolledbackState(harness, correlationId);
-                await VerifyDatabaseStateAfterRollback(build, correlationId);
+
+                await harness.Bus.Publish(new StartTransactionEvent(correlationId, 100M, new() { new() { ProductId = Guid.NewGuid(), Quantity = 2, Price = 20M } }));
+                (await harness.Consumed.Any<StartTransactionEvent>()).ShouldBeTrue();
+
+
+                var sagaHarness = harness.GetSagaStateMachineHarness<TestTransactionStateMachine, TestTransactionState>();
+                var instance = sagaHarness.Created.ContainsInState(correlationId, sagaHarness.StateMachine, sagaHarness.StateMachine.Processing);
+                instance.ShouldNotBeNull();
+
+
+                await harness.Bus.Publish(new CompletePaymentEvent(correlationId));
+
+
+                (await harness.Consumed.Any<CompletePaymentEvent>()).ShouldBeTrue();
+                (await harness.Published.Any<StartCartEvent>()).ShouldBeTrue();
+                (await harness.Published.Any<CompensateTransactionEvent>()).ShouldBeTrue();
+                (await harness.Consumed.Any<RollbackCartEvent>()).ShouldBeTrue();
+                (await harness.Consumed.Any<RollbackPaymentEvent>()).ShouldBeTrue();
+
+
+                using (var scope = build.Services.CreateScope())
+                using (var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>())
+                using (var paymentRepo = unitOfWork.CreateRepository<TestPaymentDbContext>())
+                {
+                    var paymentEntity = await paymentRepo.Where<TestPaymentEntity>(p => p.TransactionId == correlationId && p.Status == PaymentStatus.Cancelled).ToListAsync();
+                    paymentEntity.Count.ShouldBe(1);
+                }
+
+                using (var scope = build.Services.CreateScope())
+                using (var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>())
+                using (var cartRepo = unitOfWork.CreateRepository<TestCartDbContext>())
+                {
+                    var cartEntity = await cartRepo.Where<TestCartEntity>(p => p.TransactionId == correlationId).ToListAsync();
+                    cartEntity.Count.ShouldBe(0);
+                }
             }
-        }
-    }
-
-    private static async Task PublishAndVerifyStartTransaction(ITestHarness harness, Guid correlationId)
-    {
-        await harness.Bus.Publish(new StartTransactionEvent(correlationId, 100M, new List<SagaCartItem>
-        {
-            new SagaCartItem { ProductId = Guid.NewGuid(), Quantity = 2, Price = 20M }
-        }));
-
-        (await harness.Consumed.Any<StartTransactionEvent>()).ShouldBeTrue();
-    }
-
-    private static async Task VerifySagaProcessingState(ITestHarness harness, Guid correlationId)
-    {
-        var sagaHarness = harness.GetSagaStateMachineHarness<TransactionStateMachine, TransactionState>();
-        var instance = await sagaHarness.Created.ContainsInState(correlationId, sagaHarness.StateMachine, sagaHarness.StateMachine.Processing);
-        instance.ShouldNotBeNull();
-    }
-
-    private static async Task SimulateAndVerifyCompletePayment(ITestHarness harness, Guid correlationId)
-    {
-        await harness.Bus.Publish(new CompletePaymentEvent(correlationId));
-        (await harness.Consumed.Any<CompletePaymentEvent>()).ShouldBeTrue();
-
-        (await harness.Published.Any<StartCartEvent>()).ShouldBeTrue();
-    }
-
-    private static async Task SimulateAndVerifyCompleteCart(ITestHarness harness, Guid correlationId)
-    {
-        await harness.Bus.Publish(new CompleteCartEvent(correlationId));
-        (await harness.Consumed.Any<CompleteCartEvent>()).ShouldBeTrue();
-    }
-
-    private static async Task VerifySagaCompletedState(ITestHarness harness, Guid correlationId)
-    {
-        var sagaHarness = harness.GetSagaStateMachineHarness<TransactionStateMachine, TransactionState>();
-        var instance = await sagaHarness.Created.ContainsInState(correlationId, sagaHarness.StateMachine, sagaHarness.StateMachine.Completed);
-        instance.ShouldNotBeNull();
-    }
-
-    private static async Task SimulateAndVerifyCompensation(ITestHarness harness, Guid correlationId)
-    {
-        await harness.Bus.Publish(new CompensateTransactionEvent(correlationId));
-        (await harness.Consumed.Any<CompensateTransactionEvent>()).ShouldBeTrue();
-
-        (await harness.Published.Any<RollbackPaymentEvent>()).ShouldBeTrue();
-        (await harness.Published.Any<RollbackCartEvent>()).ShouldBeTrue();
-    }
-
-    private static async Task VerifySagaRolledbackState(ITestHarness harness, Guid correlationId)
-    {
-        var sagaHarness = harness.GetSagaStateMachineHarness<TransactionStateMachine, TransactionState>();
-        var instance = await sagaHarness.Created.ContainsInState(correlationId, sagaHarness.StateMachine, sagaHarness.StateMachine.Rolledback);
-        instance.ShouldNotBeNull();
-    }
-
-    private static async Task VerifyDatabaseStateAfterRollback(IHost host, Guid correlationId)
-    {
-        using var scope = host.Services.CreateScope();
-        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-
-        using (var paymentRepo = unitOfWork.CreateRepository<PaymentDbContext>())
-        {
-            var paymentEntity = await paymentRepo.Where<PaymentEntity>(p => p.TransactionId == correlationId && p.Status == PaymentStatus.Cancelled).ToListAsync();
-            paymentEntity.Count.ShouldBe(1);
-        }
-
-        using (var cartRepo = unitOfWork.CreateRepository<CartDbContext>())
-        {
-            var cartEntity = await cartRepo.Where<CartEntity>(p => p.TransactionId == correlationId && p.Status == CartStatus.Cancelled).ToListAsync();
-            cartEntity.Count.ShouldBe(1);
         }
     }
 }

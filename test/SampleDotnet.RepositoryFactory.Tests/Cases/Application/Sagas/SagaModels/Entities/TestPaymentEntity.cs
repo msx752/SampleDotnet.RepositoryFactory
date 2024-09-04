@@ -1,7 +1,7 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Application.Sagas.SagaModels.Entities;
 
 // Payment entity
-public class PaymentEntity
+public class TestPaymentEntity
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

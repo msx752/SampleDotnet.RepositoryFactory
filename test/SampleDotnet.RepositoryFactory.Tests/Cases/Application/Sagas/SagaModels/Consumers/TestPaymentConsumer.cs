@@ -1,14 +1,14 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Application.Sagas.SagaModels.Consumers;
 
-public class PaymentConsumer :
+public class TestPaymentConsumer :
     IConsumer<StartPaymentEvent>,
     IConsumer<RollbackPaymentEvent>
 {
-    private readonly IPaymentService _paymentService;
-    private readonly ILogger<PaymentConsumer> _logger;
+    private readonly ITestPaymentService _paymentService;
+    private readonly ILogger<TestPaymentConsumer> _logger;
     private readonly IPublishEndpoint _publishEndpoint;
 
-    public PaymentConsumer(IPaymentService paymentService, IPublishEndpoint publishEndpoint, ILogger<PaymentConsumer> logger)
+    public TestPaymentConsumer(ITestPaymentService paymentService, IPublishEndpoint publishEndpoint, ILogger<TestPaymentConsumer> logger)
     {
         _paymentService = paymentService;
         _publishEndpoint = publishEndpoint;
@@ -27,7 +27,7 @@ public class PaymentConsumer :
         catch (Exception ex)
         {
             _logger.LogError($"Failed to process payment: {ex.Message}");
-            await _publishEndpoint.Publish(new RollbackPaymentEvent(context.Message.CorrelationId));
+            await _publishEndpoint.Publish(new CompensateTransactionEvent(context.Message.CorrelationId));
         }
     }
 

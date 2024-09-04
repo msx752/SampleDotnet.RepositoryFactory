@@ -1,7 +1,7 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Application.Sagas.SagaModels.Entities;
 
 // CartItem entity
-public class CartItemEntity
+public class TestCartItemEntity
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

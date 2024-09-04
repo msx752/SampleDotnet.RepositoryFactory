@@ -1,6 +1,6 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Application.Sagas.SagaModels.Interfaces
 {
-    public interface IPaymentService
+    public interface ITestPaymentService
     {
         Task ProcessPayment(Guid transactionId, decimal amount);
 

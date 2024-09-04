@@ -1,14 +1,14 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Application.Sagas.SagaModels.Consumers;
 
-public class CartConsumer :
+public class TestCartConsumer :
 IConsumer<StartCartEvent>,
 IConsumer<RollbackCartEvent>
 {
-    private readonly ICartService _cartService;
-    private readonly ILogger<CartConsumer> _logger;
+    private readonly ITestCartService _cartService;
+    private readonly ILogger<TestCartConsumer> _logger;
     private readonly IPublishEndpoint _publishEndpoint;
 
-    public CartConsumer(ICartService cartService, IPublishEndpoint publishEndpoint, ILogger<CartConsumer> logger)
+    public TestCartConsumer(ITestCartService cartService, IPublishEndpoint publishEndpoint, ILogger<TestCartConsumer> logger)
     {
         _cartService = cartService;
         _publishEndpoint = publishEndpoint;
@@ -21,8 +21,8 @@ IConsumer<RollbackCartEvent>
 
         try
         {
-            List<CartItemEntity> cartItems = context.Message.Items
-                .Select(item => new CartItemEntity
+            List<TestCartItemEntity> cartItems = context.Message.Items
+                .Select(item => new TestCartItemEntity
                 {
                     ProductId = item.ProductId,
                     Quantity = item.Quantity,
@@ -35,7 +35,7 @@ IConsumer<RollbackCartEvent>
         catch (Exception ex)
         {
             _logger.LogError($"Failed to process cart: {ex.Message}");
-            await _publishEndpoint.Publish(new RollbackCartEvent(context.Message.CorrelationId));
+            await _publishEndpoint.Publish(new CompensateTransactionEvent(context.Message.CorrelationId));
         }
     }
 

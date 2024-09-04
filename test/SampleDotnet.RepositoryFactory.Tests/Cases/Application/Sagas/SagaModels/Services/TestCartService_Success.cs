@@ -1,18 +1,18 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Application.Sagas.SagaModels.Services
 {
-    public class CartService : ICartService
+    public class TestCartService_Success : ITestCartService
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public CartService(IUnitOfWork unitOfWork)
+        public TestCartService_Success(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }
 
-        public async Task ProcessCart(Guid transactionId, List<CartItemEntity> items)
+        public async Task ProcessCart(Guid transactionId, List<TestCartItemEntity> items)
         {
-            using var repo = _unitOfWork.CreateRepository<CartDbContext>();
-            var cart = new CartEntity
+            using var repo = _unitOfWork.CreateRepository<TestCartDbContext>();
+            var cart = new TestCartEntity
             {
                 TransactionId = transactionId,
                 Items = items,
@@ -29,8 +29,8 @@
 
         public async Task RollbackCart(Guid transactionId)
         {
-            using var repo = _unitOfWork.CreateRepository<CartDbContext>();
-            var cart = await repo.FirstOrDefaultAsync<CartEntity>(c => c.TransactionId == transactionId);
+            using var repo = _unitOfWork.CreateRepository<TestCartDbContext>();
+            var cart = await repo.FirstOrDefaultAsync<TestCartEntity>(c => c.TransactionId == transactionId);
             if (cart != null)
             {
                 cart.Status = CartStatus.Cancelled;

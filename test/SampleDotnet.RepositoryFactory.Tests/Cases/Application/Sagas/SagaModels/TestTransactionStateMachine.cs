@@ -1,8 +1,8 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Application.Sagas.SagaModels
 {
-    public class TransactionStateMachine : MassTransitStateMachine<TransactionState>
+    public class TestTransactionStateMachine : MassTransitStateMachine<TestTransactionState>
     {
-        public TransactionStateMachine()
+        public TestTransactionStateMachine()
         {
             InstanceState(x => x.CurrentState);
 
@@ -15,11 +15,11 @@
                 When(StartTransactionEvent)
                     .Then(context =>
                     {
-                        context.Instance.TransactionId = context.Data.CorrelationId;
-                        context.Instance.PaymentAmount = context.Data.PaymentAmount;
-                        context.Instance.CartItems = context.Data.CartItems;
-                        context.Instance.Timestamp = DateTime.UtcNow;
-                        context.Publish(new StartPaymentEvent(context.Data.CorrelationId, context.Data.PaymentAmount));
+                        context.Saga.TransactionId = context.Message.CorrelationId;
+                        context.Saga.PaymentAmount = context.Message.PaymentAmount;
+                        context.Saga.CartItems = context.Message.CartItems;
+                        context.Saga.Timestamp = DateTime.UtcNow;
+                        context.Publish(new StartPaymentEvent(context.Message.CorrelationId, context.Message.PaymentAmount));
                     })
                     .TransitionTo(Processing));
 
@@ -27,28 +27,19 @@
                 When(CompletePaymentEvent)
                     .Then(context =>
                     {
-                        context.Publish(new StartCartEvent(context.Data.CorrelationId, context.Instance.CartItems));
+                        context.Publish(new StartCartEvent(context.Message.CorrelationId, context.Saga.CartItems));
                     }),
                 When(CompleteCartEvent)
                     .Then(context =>
                     {
-                        context.Instance.CurrentState = "Completed";
+                        context.Saga.CurrentState = "Completed";
                     })
                     .TransitionTo(Completed),
                 When(CompensateTransactionEvent)
                     .ThenAsync(async context =>
                     {
-                        await context.Publish(new RollbackPaymentEvent(context.Data.CorrelationId));
-                        await context.Publish(new RollbackCartEvent(context.Data.CorrelationId));
-                    })
-                    .TransitionTo(Rolledback));
-
-            During(Completed,
-                When(CompensateTransactionEvent)
-                    .ThenAsync(async context =>
-                    {
-                        await context.Publish(new RollbackPaymentEvent(context.Data.CorrelationId));
-                        await context.Publish(new RollbackCartEvent(context.Data.CorrelationId));
+                        await context.Publish(new RollbackPaymentEvent(context.Message.CorrelationId));
+                        await context.Publish(new RollbackCartEvent(context.Message.CorrelationId));
                     })
                     .TransitionTo(Rolledback));
 

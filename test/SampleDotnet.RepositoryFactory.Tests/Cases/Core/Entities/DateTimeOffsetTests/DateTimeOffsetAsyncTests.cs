@@ -18,9 +18,7 @@ public class DateTimeOffsetAsyncTests
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
             services.AddDbContextFactory<DateTimeOffsetDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "Case_set_CreatedAt_DateTimeOffsetAsync");
-            });
+                options.UseTestSqlConnection(_shared, "Case_set_CreatedAt_DateTimeOffsetAsync"));
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });
@@ -55,9 +53,7 @@ public class DateTimeOffsetAsyncTests
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
             services.AddDbContextFactory<DateTimeOffsetDbContext>(options =>
-            {
-                options.UseTestSqlConnection(_shared, "Case_set_UpdatedAt_DateTimeOffsetAsync");
-            });
+                options.UseTestSqlConnection(_shared, "Case_set_UpdatedAt_DateTimeOffsetAsync"));
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
         });

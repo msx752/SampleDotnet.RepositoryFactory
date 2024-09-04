@@ -1,6 +1,6 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Application.Sagas.SagaModels.EventMessages;
 
-public class SagaCartItem
+public class TestSagaCartItem
 {
     public Guid ProductId { get; set; }
     public int Quantity { get; set; }

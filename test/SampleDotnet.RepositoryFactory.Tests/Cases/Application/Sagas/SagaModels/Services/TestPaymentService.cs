@@ -1,18 +1,18 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Application.Sagas.SagaModels.Services
 {
-    public class PaymentService : IPaymentService
+    public class TestPaymentService : ITestPaymentService
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public PaymentService(IUnitOfWork unitOfWork)
+        public TestPaymentService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }
 
         public async Task ProcessPayment(Guid transactionId, decimal amount)
         {
-            using var repo = _unitOfWork.CreateRepository<PaymentDbContext>();
-            var payment = new PaymentEntity
+            using var repo = _unitOfWork.CreateRepository<TestPaymentDbContext>();
+            var payment = new TestPaymentEntity
             {
                 TransactionId = transactionId,
                 Amount = amount,
@@ -29,8 +29,8 @@
 
         public async Task RollbackPayment(Guid transactionId)
         {
-            using var repo = _unitOfWork.CreateRepository<PaymentDbContext>();
-            var payment = await repo.FirstOrDefaultAsync<PaymentEntity>(p => p.TransactionId == transactionId);
+            using var repo = _unitOfWork.CreateRepository<TestPaymentDbContext>();
+            var payment = await repo.FirstOrDefaultAsync<TestPaymentEntity>(p => p.TransactionId == transactionId);
             if (payment != null)
             {
                 payment.Status = PaymentStatus.Cancelled;
