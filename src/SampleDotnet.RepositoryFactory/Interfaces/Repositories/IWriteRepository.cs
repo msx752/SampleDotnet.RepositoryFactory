@@ -12,6 +12,10 @@ public interface IWriteRepository
     /// <param name="entity">The entity to insert.</param>
     void Insert<T>(T entity) where T : class;
 
+    void AddRange<T>(IEnumerable<T> entities) where T : class;
+
+    void Add<T>(T entity) where T : class;
+
     /// <summary>
     /// Inserts a range of entities into the repository.
     /// </summary>
