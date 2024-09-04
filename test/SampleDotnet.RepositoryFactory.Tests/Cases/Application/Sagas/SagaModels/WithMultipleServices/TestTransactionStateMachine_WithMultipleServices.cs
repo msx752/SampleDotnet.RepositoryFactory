@@ -37,6 +37,7 @@ public interface ITestInventoryService
 public interface ITestPaymentService
 {
     Task<List<SagaCartItem>> GetItemsForTransactionAsync(Guid correlationId);
+
     Task<bool> ProcessPaymentAsync(Guid correlationId, decimal amount);
 
     Task<bool> RollbackPaymentAsync(Guid correlationId);
@@ -132,6 +133,7 @@ public class SagaCartItem
     public Guid ProductId { get; set; }
     public int Quantity { get; set; }
 }
+
 public record StartCartEvent(Guid CorrelationId, List<SagaCartItem> Items) : CorrelatedBy<Guid>;
 
 public class StartInventoryEvent
@@ -288,7 +290,6 @@ public class TestInventoryService_Success : ITestInventoryService
         _unitOfWork = unitOfWork;
     }
 
-
     public async Task<bool> ReleaseInventoryAsync(Guid correlationId)
     {
         // Simulate releasing inventory
@@ -361,7 +362,7 @@ public class TestPaymentService : ITestPaymentService
     {
         // Simulate rolling back payment
         using var repo = _unitOfWork.CreateRepository<TestPaymentDbContext>();
-        var payment = repo.FirstOrDefault< TestPaymentEntity>(p => p.TransactionId == correlationId && p.Status == PaymentStatus.Processed);
+        var payment = repo.FirstOrDefault<TestPaymentEntity>(p => p.TransactionId == correlationId && p.Status == PaymentStatus.Processed);
         if (payment != null)
         {
             payment.Status = PaymentStatus.Cancelled;
@@ -464,6 +465,7 @@ public class TestPaymentEntity
                                              // Status of the payment (Pending, Processed, Failed, Cancelled)
                                              // The timestamp when the payment was created
 }
+
 public class TestCartConsumer : IConsumer<StartCartEvent>
 {
     private readonly ITestCartService _cartService;
@@ -492,6 +494,7 @@ public class TestCartConsumer : IConsumer<StartCartEvent>
         }
     }
 }
+
 public class TestPaymentConsumer : IConsumer<StartPaymentEvent>
 {
     private readonly ITestPaymentService _paymentService;
@@ -511,8 +514,8 @@ public class TestPaymentConsumer : IConsumer<StartPaymentEvent>
 
         if (success)
         {
-            // Assume that `Items` need to be passed to the next event. 
-            // If the `Items` property is required for subsequent events, 
+            // Assume that `Items` need to be passed to the next event.
+            // If the `Items` property is required for subsequent events,
             // we should fetch it from somewhere in the consumer or service.
             var items = await _paymentService.GetItemsForTransactionAsync(correlationId);
 

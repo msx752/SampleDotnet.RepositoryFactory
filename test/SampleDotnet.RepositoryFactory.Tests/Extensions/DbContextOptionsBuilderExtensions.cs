@@ -2,10 +2,10 @@
 
 public static class DbContextOptionsBuilderExtensions
 {
-    public static void UseTestSqlConnection(this DbContextOptionsBuilder options, SharedContainerFixture shared, string initialCatalog)
+    public static void UseTestSqlConnection(this DbContextOptionsBuilder options, SharedContainerFixture shared, string databaseName)
     {
         var cnnBuilder = new SqlConnectionStringBuilder(shared.SqlContainer.GetConnectionString());
-        cnnBuilder.InitialCatalog = initialCatalog;
+        cnnBuilder.InitialCatalog = databaseName;
         cnnBuilder.TrustServerCertificate = true;
         cnnBuilder.MultipleActiveResultSets = true;
         cnnBuilder.ConnectRetryCount = 5;
