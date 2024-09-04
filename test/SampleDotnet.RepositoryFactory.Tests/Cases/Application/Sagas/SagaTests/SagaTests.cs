@@ -13,43 +13,29 @@ public class SagaTests
     }
 
     [Fact]
-    public async Task DistributedTransaction_SagaCommitAndRollback()
+    public async Task Saga_ShouldCommitOnSuccess()
     {
         // Create an IHostBuilder and configure services to use DbContexts and messaging.
         IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
         {
-            // Configure CartDbContext with SQL Server settings.
+            // Configure CartDbContext with SQL Server settings for testing.
             services.AddDbContextFactory<CartDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "CartDbContext_DistributedTransaction_SagaCommitAndRollback";
-                cnnBuilder.TrustServerCertificate = true;
-                cnnBuilder.MultipleActiveResultSets = true;
-                cnnBuilder.ConnectRetryCount = 5;
-                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
-                options.UseSqlServer(cnnBuilder.ToString(), opt => opt.EnableRetryOnFailure());
-                options.EnableSensitiveDataLogging();
-                options.EnableDetailedErrors();
+                options.UseTestSqlConnection(_shared, "CartDbContext_Saga_ShouldCommitOnSuccess");
             });
 
-            // Configure SecondDbContext with SQL Server settings.
+            // Configure PaymentDbContext with SQL Server settings for testing.
             services.AddDbContextFactory<PaymentDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "PaymentDbContext_DistributedTransaction_SagaCommitAndRollback";  // Set the initial catalog (database name).
-                cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
-                cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
-                cnnBuilder.ConnectRetryCount = 5;  // Set the number of retry attempts for connection.
-                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;  // Set connection timeout.
-                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());  // Use SQL Server with retry on failure.
-                options.EnableSensitiveDataLogging();  // Enable logging of sensitive data (for debugging purposes).
-                options.EnableDetailedErrors();  // Enable detailed error messages (for debugging purposes).
+                options.UseTestSqlConnection(_shared, "PaymentDbContext_Saga_ShouldCommitOnSuccess");
             });
 
+            // Register application services.
             services.AddTransient<ICartService, CartService>();
             services.AddTransient<IPaymentService, PaymentService>();
             services.AddRepositoryFactory(ServiceLifetime.Transient);
 
+            // Configure MassTransit with test harness for in-memory transport.
             services.AddMassTransitTestHarness(x =>
             {
                 x.AddConsumer<CartConsumer>();
@@ -74,81 +60,148 @@ public class SagaTests
             await harness.Start();
 
             using (IServiceScope requestScope = build.Services.CreateScope())
-            using (var cancellationTokenSource = new CancellationTokenSource())
             {
                 var correlationId = Guid.NewGuid();
 
-                // 1. Publish the StartTransaction message to start the saga
-                await harness.Bus.Publish(new StartTransactionEvent(correlationId, 100M, new List<SagaCartItem>
-                {
-                    new SagaCartItem { ProductId = Guid.NewGuid(), Quantity = 2, Price = 20M }
-                }), cancellationTokenSource.Token);
-
-                // Verify StartTransaction is consumed
-                (await harness.Consumed.Any<StartTransactionEvent>()).ShouldBeTrue();
-
-                var sagaHarness = harness.GetSagaStateMachineHarness<TransactionStateMachine, TransactionState>();
-
-                // Ensure saga instance is created
-                (await sagaHarness.Created.Any(x => x.CorrelationId == correlationId)).ShouldBeTrue();
-
-                // 2. Verify that saga is in the Processing state
-                var instance = sagaHarness.Created.ContainsInState(correlationId, sagaHarness.StateMachine, sagaHarness.StateMachine.Processing);
-                instance.ShouldNotBeNull();
-
-                // 3. Since StartTransaction triggers StartPayment, verify StartPayment is published
-                (await harness.Published.Any<StartPaymentEvent>()).ShouldBeTrue();
-
-                // Simulate receiving CompletePayment event
-                await harness.Bus.Publish(new CompletePaymentEvent(correlationId));
-
-                // Verify CompletePayment is consumed
-                (await harness.Consumed.Any<CompletePaymentEvent>()).ShouldBeTrue();
-
-                // 4. Verify StartCart is published as a result of CompletePayment
-                (await harness.Published.Any<StartCartEvent>()).ShouldBeTrue();
-
-                // Simulate receiving CompleteCart event
-                await harness.Bus.Publish(new CompleteCartEvent(correlationId));
-
-                // Verify CompleteCart is consumed
-                (await harness.Consumed.Any<CompleteCartEvent>()).ShouldBeTrue();
-
-                // 5. Ensure saga is in Completed state after processing CompleteCart
-                instance = sagaHarness.Created.ContainsInState(correlationId, sagaHarness.StateMachine, sagaHarness.StateMachine.Completed);
-                instance.ShouldNotBeNull();
-
-                // Simulate a failure after payment, triggering compensation
-                await harness.Bus.Publish(new CompensateTransactionEvent(correlationId));
-
-                // Verify CompensateTransactionEvent is consumed
-                (await harness.Consumed.Any<CompensateTransactionEvent>()).ShouldBeTrue();
-
-                // 3. Verify that Rollback actions are published as a result of compensation
-                (await harness.Published.Any<RollbackPaymentEvent>()).ShouldBeTrue();
-                (await harness.Published.Any<RollbackCartEvent>()).ShouldBeTrue();
-
-                // 4. Ensure saga is in Rolledback state after rollback actions
-                instance = sagaHarness.Created.ContainsInState(correlationId, sagaHarness.StateMachine, sagaHarness.StateMachine.Rolledback);
-                instance.ShouldNotBeNull();
-
-                (await harness.Consumed.Any<RollbackPaymentEvent>()).ShouldBeTrue();
-                (await harness.Consumed.Any<CompleteCartEvent>()).ShouldBeTrue();
-
-                using (var unitOfWork = build.Services.CreateScope().ServiceProvider.GetRequiredService<IUnitOfWork>())
-                using (IRepository<PaymentDbContext> repo = unitOfWork.CreateRepository<PaymentDbContext>())
-                {
-                    var paymentEntity = await repo.Where<PaymentEntity>(p => p.TransactionId == correlationId && p.Status == PaymentStatus.Cancelled).ToListAsync();
-                    paymentEntity.Count.ShouldBeEquivalentTo(1);
-                }
-
-                using (var unitOfWork = build.Services.CreateScope().ServiceProvider.GetRequiredService<IUnitOfWork>())
-                using (IRepository<CartDbContext> repo = unitOfWork.CreateRepository<CartDbContext>())
-                {
-                    var cartEntity = await repo.Where<CartEntity>(p => p.TransactionId == correlationId && p.Status == CartStatus.Cancelled).ToListAsync();
-                    cartEntity.Count.ShouldBeEquivalentTo(0);
-                }
+                await PublishAndVerifyStartTransaction(harness, correlationId);
+                await VerifySagaProcessingState(harness, correlationId);
+                await SimulateAndVerifyCompletePayment(harness, correlationId);
+                await SimulateAndVerifyCompleteCart(harness, correlationId);
+                await VerifySagaCompletedState(harness, correlationId);
             }
+        }
+    }
+
+    [Fact]
+    public async Task Saga_ShouldRollbackOnFailure()
+    {
+        // Create an IHostBuilder and configure services to use DbContexts and messaging.
+        IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
+        {
+            // Configure CartDbContext with SQL Server settings for testing.
+            services.AddDbContextFactory<CartDbContext>(options =>
+            {
+                options.UseTestSqlConnection(_shared, "CartDbContext_Saga_ShouldRollbackOnFailure");
+            });
+
+            // Configure PaymentDbContext with SQL Server settings for testing.
+            services.AddDbContextFactory<PaymentDbContext>(options =>
+            {
+                options.UseTestSqlConnection(_shared, "PaymentDbContext_Saga_ShouldRollbackOnFailure");
+            });
+
+            // Register application services.
+            services.AddTransient<ICartService, CartService>();
+            services.AddTransient<IPaymentService, PaymentService>();
+            services.AddRepositoryFactory(ServiceLifetime.Transient);
+
+            // Configure MassTransit with test harness for in-memory transport.
+            services.AddMassTransitTestHarness(x =>
+            {
+                x.AddConsumer<CartConsumer>();
+                x.AddConsumer<PaymentConsumer>();
+
+                x.UsingInMemory((context, cfg) =>
+                {
+                    cfg.ConfigureEndpoints(context);
+                });
+
+                x.AddSagaStateMachine<TransactionStateMachine, TransactionState>()
+                    .InMemoryRepository();
+            });
+        });
+
+        using (IHost build = host.Build())
+        {
+            build.Services.EnsureDatabaseExists<CartDbContext>();
+            build.Services.EnsureDatabaseExists<PaymentDbContext>();
+
+            var harness = build.Services.CreateScope().ServiceProvider.GetRequiredService<ITestHarness>();
+            await harness.Start();
+
+            using (IServiceScope requestScope = build.Services.CreateScope())
+            {
+                var correlationId = Guid.NewGuid();
+
+                await PublishAndVerifyStartTransaction(harness, correlationId);
+                await VerifySagaProcessingState(harness, correlationId);
+                await SimulateAndVerifyCompletePayment(harness, correlationId);
+                await SimulateAndVerifyCompensation(harness, correlationId);
+                await VerifySagaRolledbackState(harness, correlationId);
+                await VerifyDatabaseStateAfterRollback(build, correlationId);
+            }
+        }
+    }
+
+    private static async Task PublishAndVerifyStartTransaction(ITestHarness harness, Guid correlationId)
+    {
+        await harness.Bus.Publish(new StartTransactionEvent(correlationId, 100M, new List<SagaCartItem>
+        {
+            new SagaCartItem { ProductId = Guid.NewGuid(), Quantity = 2, Price = 20M }
+        }));
+
+        (await harness.Consumed.Any<StartTransactionEvent>()).ShouldBeTrue();
+    }
+
+    private static async Task VerifySagaProcessingState(ITestHarness harness, Guid correlationId)
+    {
+        var sagaHarness = harness.GetSagaStateMachineHarness<TransactionStateMachine, TransactionState>();
+        var instance = await sagaHarness.Created.ContainsInState(correlationId, sagaHarness.StateMachine, sagaHarness.StateMachine.Processing);
+        instance.ShouldNotBeNull();
+    }
+
+    private static async Task SimulateAndVerifyCompletePayment(ITestHarness harness, Guid correlationId)
+    {
+        await harness.Bus.Publish(new CompletePaymentEvent(correlationId));
+        (await harness.Consumed.Any<CompletePaymentEvent>()).ShouldBeTrue();
+
+        (await harness.Published.Any<StartCartEvent>()).ShouldBeTrue();
+    }
+
+    private static async Task SimulateAndVerifyCompleteCart(ITestHarness harness, Guid correlationId)
+    {
+        await harness.Bus.Publish(new CompleteCartEvent(correlationId));
+        (await harness.Consumed.Any<CompleteCartEvent>()).ShouldBeTrue();
+    }
+
+    private static async Task VerifySagaCompletedState(ITestHarness harness, Guid correlationId)
+    {
+        var sagaHarness = harness.GetSagaStateMachineHarness<TransactionStateMachine, TransactionState>();
+        var instance = await sagaHarness.Created.ContainsInState(correlationId, sagaHarness.StateMachine, sagaHarness.StateMachine.Completed);
+        instance.ShouldNotBeNull();
+    }
+
+    private static async Task SimulateAndVerifyCompensation(ITestHarness harness, Guid correlationId)
+    {
+        await harness.Bus.Publish(new CompensateTransactionEvent(correlationId));
+        (await harness.Consumed.Any<CompensateTransactionEvent>()).ShouldBeTrue();
+
+        (await harness.Published.Any<RollbackPaymentEvent>()).ShouldBeTrue();
+        (await harness.Published.Any<RollbackCartEvent>()).ShouldBeTrue();
+    }
+
+    private static async Task VerifySagaRolledbackState(ITestHarness harness, Guid correlationId)
+    {
+        var sagaHarness = harness.GetSagaStateMachineHarness<TransactionStateMachine, TransactionState>();
+        var instance = await sagaHarness.Created.ContainsInState(correlationId, sagaHarness.StateMachine, sagaHarness.StateMachine.Rolledback);
+        instance.ShouldNotBeNull();
+    }
+
+    private static async Task VerifyDatabaseStateAfterRollback(IHost host, Guid correlationId)
+    {
+        using var scope = host.Services.CreateScope();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+        using (var paymentRepo = unitOfWork.CreateRepository<PaymentDbContext>())
+        {
+            var paymentEntity = await paymentRepo.Where<PaymentEntity>(p => p.TransactionId == correlationId && p.Status == PaymentStatus.Cancelled).ToListAsync();
+            paymentEntity.Count.ShouldBe(1);
+        }
+
+        using (var cartRepo = unitOfWork.CreateRepository<CartDbContext>())
+        {
+            var cartEntity = await cartRepo.Where<CartEntity>(p => p.TransactionId == correlationId && p.Status == CartStatus.Cancelled).ToListAsync();
+            cartEntity.Count.ShouldBe(1);
         }
     }
 }

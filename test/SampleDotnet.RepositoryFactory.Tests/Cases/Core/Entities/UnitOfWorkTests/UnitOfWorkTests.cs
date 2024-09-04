@@ -27,29 +27,13 @@ public class UnitOfWorkTests
             // Configure FirstDbContext with SQL Server settings.
             services.AddDbContextFactory<FirstDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "FirstDbContext_Case_UnitOfWork_CommitAndRollback";  // Set the initial catalog (database name).
-                cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
-                cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
-                cnnBuilder.ConnectRetryCount = 5;  // Set the number of retry attempts for connection.
-                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;  // Set connection timeout.
-                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());  // Use SQL Server with retry on failure.
-                options.EnableSensitiveDataLogging();  // Enable logging of sensitive data (for debugging purposes).
-                options.EnableDetailedErrors();  // Enable detailed error messages (for debugging purposes).
+                options.UseTestSqlConnection(_shared, "FirstDbContext_Case_UnitOfWork_CommitAndRollback");
             });
 
             // Configure SecondDbContext with SQL Server settings.
             services.AddDbContextFactory<SecondDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "SecondDbContext_Case_UnitOfWork_CommitAndRollback";  // Set the initial catalog (database name).
-                cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
-                cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
-                cnnBuilder.ConnectRetryCount = 5;  // Set the number of retry attempts for connection.
-                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;  // Set connection timeout.
-                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());  // Use SQL Server with retry on failure.
-                options.EnableSensitiveDataLogging();  // Enable logging of sensitive data (for debugging purposes).
-                options.EnableDetailedErrors();  // Enable detailed error messages (for debugging purposes).
+                options.UseTestSqlConnection(_shared, "SecondDbContext_Case_UnitOfWork_CommitAndRollback");
             });
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
@@ -212,15 +196,7 @@ public class UnitOfWorkTests
             // Configure TestApplicationDbContext with SQL Server settings.
             services.AddDbContextFactory<ThirdDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "Case_UnitOfWork_Do_Not_Skip_DetectChanges";  // Set the initial catalog (database name).
-                cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
-                cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
-                cnnBuilder.ConnectRetryCount = 5;  // Set the number of retry attempts for connection.
-                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;  // Set connection timeout.
-                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());  // Use SQL Server with retry on failure.
-                options.EnableSensitiveDataLogging();  // Enable logging of sensitive data (for debugging purposes).
-                options.EnableDetailedErrors();  // Enable detailed error messages (for debugging purposes).
+                options.UseTestSqlConnection(_shared, "Case_UnitOfWork_Do_Not_Skip_DetectChanges");
             });
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
@@ -287,15 +263,7 @@ public class UnitOfWorkTests
             // Configure DbContextFactory and UnitOfWork for the test.
             services.AddDbContextFactory<ThirdDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "Case_UnitOfWork_Rollback";  // Set the database name.
-                cnnBuilder.TrustServerCertificate = true;  // Trust the SQL Server certificate.
-                cnnBuilder.MultipleActiveResultSets = true;  // Enable multiple active result sets.
-                cnnBuilder.ConnectRetryCount = 5;  // Set connection retry count.
-                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;  // Set connection timeout.
-                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());  // Use SQL Server with retry on failure enabled.
-                options.EnableSensitiveDataLogging();  // Enable sensitive data logging.
-                options.EnableDetailedErrors();  // Enable detailed error messages.
+                options.UseTestSqlConnection(_shared, "Case_UnitOfWork_Rollback");
             });
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
@@ -397,29 +365,13 @@ public class UnitOfWorkTests
             // Configure FirstDbContext with SQL Server settings.
             services.AddDbContextFactory<FirstDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "TwoDifferent_DbContext_Rollback_FirstDb";  // Set the initial catalog (database name).
-                cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
-                cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
-                cnnBuilder.ConnectRetryCount = 5;  // Set the number of retry attempts for connection.
-                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;  // Set connection timeout.
-                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());  // Use SQL Server with retry on failure.
-                options.EnableSensitiveDataLogging();  // Enable logging of sensitive data (for debugging purposes).
-                options.EnableDetailedErrors();  // Enable detailed error messages (for debugging purposes).
+                options.UseTestSqlConnection(_shared, "TwoDifferent_DbContext_Rollback_FirstDb");
             });
 
             // Configure SecondDbContext with SQL Server settings.
             services.AddDbContextFactory<SecondDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "TwoDifferent_DbContext_Rollback_SecondDb";  // Set the initial catalog (database name).
-                cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
-                cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
-                cnnBuilder.ConnectRetryCount = 5;  // Set the number of retry attempts for connection.
-                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;  // Set connection timeout.
-                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());  // Use SQL Server with retry on failure.
-                options.EnableSensitiveDataLogging();  // Enable logging of sensitive data (for debugging purposes).
-                options.EnableDetailedErrors();  // Enable detailed error messages (for debugging purposes).
+                options.UseTestSqlConnection(_shared, "TwoDifferent_DbContext_Rollback_SecondDb");
             });
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
@@ -542,28 +494,12 @@ public class UnitOfWorkTests
         {
             services.AddDbContextFactory<FirstDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "PartialCommitAndRollback_FirstDb";  // Set the initial catalog.
-                cnnBuilder.TrustServerCertificate = true;
-                cnnBuilder.MultipleActiveResultSets = true;
-                cnnBuilder.ConnectRetryCount = 5;
-                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
-                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
-                options.EnableSensitiveDataLogging();
-                options.EnableDetailedErrors();
+                options.UseTestSqlConnection(_shared, "PartialCommitAndRollback_FirstDb");
             });
 
             services.AddDbContextFactory<SecondDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "PartialCommitAndRollback_SecondDb";  // Set the initial catalog.
-                cnnBuilder.TrustServerCertificate = true;
-                cnnBuilder.MultipleActiveResultSets = true;
-                cnnBuilder.ConnectRetryCount = 5;
-                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
-                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
-                options.EnableSensitiveDataLogging();
-                options.EnableDetailedErrors();
+                options.UseTestSqlConnection(_shared, "PartialCommitAndRollback_SecondDb");
             });
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
@@ -665,28 +601,12 @@ public class UnitOfWorkTests
         {
             services.AddDbContextFactory<FirstDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "InterleavedOperations_FirstDb";  // Set the initial catalog.
-                cnnBuilder.TrustServerCertificate = true;
-                cnnBuilder.MultipleActiveResultSets = true;
-                cnnBuilder.ConnectRetryCount = 5;
-                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
-                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
-                options.EnableSensitiveDataLogging();
-                options.EnableDetailedErrors();
+                options.UseTestSqlConnection(_shared, "InterleavedOperations_FirstDb");
             });
 
             services.AddDbContextFactory<SecondDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "InterleavedOperations_SecondDb";  // Set the initial catalog.
-                cnnBuilder.TrustServerCertificate = true;
-                cnnBuilder.MultipleActiveResultSets = true;
-                cnnBuilder.ConnectRetryCount = 5;
-                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
-                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
-                options.EnableSensitiveDataLogging();
-                options.EnableDetailedErrors();
+                options.UseTestSqlConnection(_shared, "InterleavedOperations_SecondDb");
             });
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
@@ -760,15 +680,7 @@ public class UnitOfWorkTests
             // Configure TestApplicationDbContext with SQL Server settings.
             services.AddDbContextFactory<ThirdDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "Case_UnitOfWork_NestedTransactionsWithSavePoints";  // Set the initial catalog (database name).
-                cnnBuilder.TrustServerCertificate = true;  // Trust the server certificate.
-                cnnBuilder.MultipleActiveResultSets = true;  // Allow multiple active result sets.
-                cnnBuilder.ConnectRetryCount = 5;  // Set the number of retry attempts for connection.
-                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;  // Set connection timeout.
-                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());  // Use SQL Server with retry on failure.
-                options.EnableSensitiveDataLogging();  // Enable logging of sensitive data (for debugging purposes).
-                options.EnableDetailedErrors();  // Enable detailed error messages (for debugging purposes).
+                options.UseTestSqlConnection(_shared, "Case_UnitOfWork_NestedTransactionsWithSavePoints");
             });
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);

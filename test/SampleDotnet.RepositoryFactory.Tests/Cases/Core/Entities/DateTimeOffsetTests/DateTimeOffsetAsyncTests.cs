@@ -19,16 +19,7 @@ public class DateTimeOffsetAsyncTests
         {
             services.AddDbContextFactory<DateTimeOffsetDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "Case_set_CreatedAt_DateTimeOffsetAsync";
-                cnnBuilder.TrustServerCertificate = true;
-                cnnBuilder.MultipleActiveResultSets = true;
-                cnnBuilder.ConnectRetryCount = 5;
-                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
-                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
-                //options.UseInMemoryDatabase("Case_set_CreatedAt_DateTimeOffsetAsync");
-                options.EnableSensitiveDataLogging();
-                options.EnableDetailedErrors();
+                options.UseTestSqlConnection(_shared, "Case_set_CreatedAt_DateTimeOffsetAsync");
             });
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
@@ -65,16 +56,7 @@ public class DateTimeOffsetAsyncTests
         {
             services.AddDbContextFactory<DateTimeOffsetDbContext>(options =>
             {
-                var cnnBuilder = new SqlConnectionStringBuilder(_shared.SqlContainer.GetConnectionString());
-                cnnBuilder.InitialCatalog = "Case_set_UpdatedAt_DateTimeOffsetAsync";
-                cnnBuilder.TrustServerCertificate = true;
-                cnnBuilder.MultipleActiveResultSets = true;
-                cnnBuilder.ConnectRetryCount = 5;
-                cnnBuilder.ConnectTimeout = TimeSpan.FromMinutes(5).Seconds;
-                options.UseSqlServer(cnnBuilder.ToString(), (opt) => opt.EnableRetryOnFailure());
-                //options.UseInMemoryDatabase("Case_set_UpdatedAt_DateTimeOffsetAsync");
-                options.EnableSensitiveDataLogging();
-                options.EnableDetailedErrors();
+                options.UseTestSqlConnection(_shared, "Case_set_UpdatedAt_DateTimeOffsetAsync");
             });
 
             services.AddRepositoryFactory(ServiceLifetime.Scoped);
