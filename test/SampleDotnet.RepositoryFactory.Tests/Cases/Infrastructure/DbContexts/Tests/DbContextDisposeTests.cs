@@ -17,7 +17,7 @@
         {
             IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
             {
-                services.AddDbContextFactory<DateTimeOffsetDbContext>(options =>
+                services.AddDbContextFactory<TestDisposeDbContext>(options =>
                     options.UseTestSqlConnection(_shared, "Case_DbContext_Should_Not_Throw_ObjectDisposedException1"));
 
                 services.AddRepositoryFactory(ServiceLifetime.Scoped);
@@ -62,7 +62,7 @@
         {
             IHostBuilder host = Host.CreateDefaultBuilder().ConfigureServices((services) =>
             {
-                services.AddDbContextFactory<DateTimeOffsetDbContext>(options =>
+                services.AddDbContextFactory<TestDisposeDbContext>(options =>
                     options.UseTestSqlConnection(_shared, "Case_Repository_Should_Not_Throw_ObjectDisposedException2"));
 
                 services.AddRepositoryFactory(ServiceLifetime.Scoped);
