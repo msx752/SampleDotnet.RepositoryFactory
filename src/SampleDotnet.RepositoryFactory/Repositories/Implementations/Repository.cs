@@ -190,12 +190,26 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
         DbContext.Set<T>().Add((T)_funcCreatedAt(entity));
     }
 
+    public void Add<T>(T entity) where T : class
+    {
+        ArgumentNullException.ThrowIfNull(entity, nameof(entity));
+
+        DbContext.Set<T>().Add((T)_funcCreatedAt(entity));
+    }
+
     /// <summary>
     /// Inserts a range of entities into the DbContext.
     /// </summary>
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="entities">The entities to insert.</param>
     public void Insert<T>(params T[] entities) where T : class
+    {
+        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
+
+        DbContext.Set<T>().AddRange(entities.Select(f => (T)_funcCreatedAt(f)));
+    }
+
+    public void AddRange<T>(IEnumerable<T> entities) where T : class
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
