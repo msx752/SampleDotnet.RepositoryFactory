@@ -36,9 +36,25 @@ dotnet add package SampleDotnet.RepositoryFactory --prerelease
 
 Ensure that your project targets one of the following frameworks: **.NET 6.0**, **.NET 7.0**, or **.NET 8.0**. This package does not support .NET 5.
 
+### **1. Parallel Operations and DbContextFactory**
+
+The package supports parallel operations by using a `DbContextFactory` to create new `DbContext` instances. This approach prevents concurrency issues that occur when the same `DbContext` instance is used across multiple threads.
+
+## **Special Note on Transaction Management**
+
+> **IMPORTANT**: Proper transaction management is crucial when working with multiple `DbContext` instances.
+
+### **Key Points to Consider:**
+
+- **Using Multiple DbContexts**: If you are using multiple `DbContext` instances, each managing its own transaction, be aware that if a transaction commits successfully on one `DbContext` but fails on another, it rolls back already committed transactions to maintain data consistency (Compensate Transaction). This scenario requires careful handling to ensure that all related changes are either fully committed or completely rolled back across all DbContexts.
+
+- **Using a Single DbContext**: When using a single `DbContext` instance for all operations within a unit of work, transaction management is simplified. All operations are either committed together or rolled back together, eliminating the need to manually roll back already committed transactions from different `DbContext` instances.
+
+### **Best Practice**: To avoid the complexity of handling multiple transactions, use a single `DbContext` instance within the scope of a unit of work whenever possible. This approach ensures straightforward transaction management and helps maintain data integrity.
+
 ## **Usage**
 
-### **1. Service Registration**
+### **2. Service Registration**
 
 To use the `RepositoryFactory` and `UnitOfWork` in your application, register the necessary services in the `Startup` class or wherever you configure services in your application.
 
@@ -62,7 +78,7 @@ public void ConfigureServices(IServiceCollection services)
 
 This setup uses the traditional `AddDbContextFactory` method to configure `DbContextFactory` for `UserDbContext` and specifies the desired service lifetime for the factory.
 
-### **2. Using the Repository and Unit of Work in Controllers**
+### **3. Using the Repository and Unit of Work in Controllers**
 
 After configuring the services, use the `IUnitOfWork` and repository pattern in your controllers to manage database operations.
 
@@ -98,7 +114,7 @@ public class UserController : Controller
 }
 ```
 
-### **3. Automatic Timestamps for Entities**
+### **4. Automatic Timestamps for Entities**
 
 If your entities implement the `IHasDateTimeOffset` interface, their `CreatedAt` and `UpdatedAt` properties will be automatically managed when using repository methods.
 
@@ -119,21 +135,6 @@ public class TestUserEntity : IHasDateTimeOffset
 }
 ```
 
-### **4. Parallel Operations and DbContextFactory**
-
-The package supports parallel operations by using a `DbContextFactory` to create new `DbContext` instances. This approach prevents concurrency issues that occur when the same `DbContext` instance is used across multiple threads.
-
-## **Special Note on Transaction Management**
-
-> **IMPORTANT**: Proper transaction management is crucial when working with multiple `DbContext` instances.
-
-### **Key Points to Consider:**
-
-- **Using Multiple DbContexts**: If you are using multiple `DbContext` instances, each managing its own transaction, be aware that if a transaction commits successfully on one `DbContext` but fails on another, you may need to manually roll back already committed transactions to maintain data consistency. This scenario requires careful handling to ensure that all related changes are either fully committed or completely rolled back across all DbContexts.
-
-- **Using a Single DbContext**: When using a single `DbContext` instance for all operations within a unit of work, transaction management is simplified. All operations are either committed together or rolled back together, eliminating the need to manually roll back already committed transactions from different `DbContext` instances.
-
-### **Best Practice**: To avoid the complexity of handling multiple transactions, use a single `DbContext` instance within the scope of a unit of work whenever possible. This approach ensures straightforward transaction management and helps maintain data integrity.
 
 ## **Descriptions of Key Components**
 
