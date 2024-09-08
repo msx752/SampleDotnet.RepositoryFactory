@@ -51,8 +51,6 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     /// <param name="entity">The entity to delete.</param>
     public void Delete<T>(T entity) where T : class
     {
-        ArgumentNullException.ThrowIfNull(entity, nameof(entity));
-
         base.Delete(entity);
     }
 
@@ -63,8 +61,6 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     /// <param name="entities">The entities to delete.</param>
     public void Delete<T>(params T[] entities) where T : class
     {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-
         base.DeleteRange(entities);
     }
 
@@ -77,7 +73,7 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        DbContext.Set<T>().RemoveRange(entities);
+        DbContext.RemoveRange(entities);
     }
 
     /// <summary>
@@ -117,7 +113,7 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     {
         ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
 
-        return AsQueryable<T>().FirstOrDefault(predicate);
+        return DbContext.Set<T>().FirstOrDefault(predicate);
     }
 
     /// <summary>
@@ -127,7 +123,7 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     /// <returns>The first entity in the sequence, or null.</returns>
     public T? FirstOrDefault<T>() where T : class
     {
-        return AsQueryable<T>().FirstOrDefault();
+        return DbContext.Set<T>().FirstOrDefault();
     }
 
     /// <summary>
@@ -141,7 +137,7 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     {
         ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
 
-        return AsQueryable<T>().FirstOrDefaultAsync(predicate, cancellationToken);
+        return DbContext.Set<T>().FirstOrDefaultAsync(predicate, cancellationToken);
     }
 
     /// <summary>
@@ -152,7 +148,7 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     /// <returns>A task representing the asynchronous operation, with the first entity in the sequence, or null.</returns>
     public Task<T?> FirstOrDefaultAsync<T>(CancellationToken cancellationToken = default) where T : class
     {
-        return AsQueryable<T>().FirstOrDefaultAsync(cancellationToken);
+        return DbContext.Set<T>().FirstOrDefaultAsync(cancellationToken);
     }
 
     /// <summary>
@@ -206,14 +202,14 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        DbContext.Set<T>().AddRange(entities.Select(f => (T)_funcCreatedAt(f)));
+        DbContext.AddRange(entities.Select(f => (T)_funcCreatedAt(f)));
     }
 
     public void AddRange<T>(IEnumerable<T> entities) where T : class
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        DbContext.Set<T>().AddRange(entities.Select(f => (T)_funcCreatedAt(f)));
+        DbContext.AddRange(entities.Select(f => (T)_funcCreatedAt(f)));
     }
 
     /// <summary>
@@ -225,7 +221,7 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        DbContext.Set<T>().AddRange(entities.Select(f => (T)_funcCreatedAt(f)));
+        DbContext.AddRange(entities.Select(f => (T)_funcCreatedAt(f)));
     }
 
     /// <summary>
@@ -239,7 +235,7 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
 
-        return DbContext.Set<T>().AddAsync((T)_funcCreatedAt(entity), cancellationToken);
+        return DbContext.AddAsync((T)_funcCreatedAt(entity), cancellationToken);
     }
 
     /// <summary>
@@ -253,7 +249,7 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        return DbContext.Set<T>().AddRangeAsync(entities.Select(f => (T)_funcCreatedAt(f)), cancellationToken);
+        return DbContext.AddRangeAsync(entities.Select(f => (T)_funcCreatedAt(f)), cancellationToken);
     }
 
     /// <summary>
@@ -267,7 +263,7 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
 
-        return DbContext.Set<T>().AddRangeAsync(entities.Select(f => (T)_funcCreatedAt(f)), cancellationToken);
+        return DbContext.AddRangeAsync(entities.Select(f => (T)_funcCreatedAt(f)), cancellationToken);
     }
 
     /// <summary>
@@ -300,6 +296,6 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     {
         ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
 
-        return AsQueryable<T>().Where(predicate);
+        return DbContext.Set<T>().Where(predicate);
     }
 }
