@@ -1,6 +1,4 @@
-﻿using SampleDotnet.RepositoryFactory.Exceptions;
-
-namespace SampleDotnet.RepositoryFactory.Interfaces.Core;
+﻿namespace SampleDotnet.RepositoryFactory.Interfaces.Core;
 
 public interface ITransactionManager : ITransactionSave, IAsyncRollback, IDisposable
 {

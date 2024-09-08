@@ -1,6 +1,4 @@
-﻿using SampleDotnet.RepositoryFactory.Exceptions;
-
-namespace SampleDotnet.RepositoryFactory.Interfaces.Core;
+﻿namespace SampleDotnet.RepositoryFactory.Interfaces.Core;
 
 // Represents the Unit of Work pattern for managing transactions and repositories
 public interface IUnitOfWork : IDisposable

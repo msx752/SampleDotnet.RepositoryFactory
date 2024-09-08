@@ -1,18 +1,4 @@
-﻿/* Unmerged change from project 'SampleDotnet.RepositoryFactory (net6.0)'
-Before:
-namespace SampleDotnet.RepositoryFactory.Entities.Database;
-After:
-using SampleDotnet;
-using SampleDotnet.RepositoryFactory;
-using SampleDotnet.RepositoryFactory;
-using SampleDotnet.RepositoryFactory.Entities;
-using SampleDotnet.RepositoryFactory.Entities.Database;
-
-namespace SampleDotnet.RepositoryFactory;
-*/
-using SampleDotnet.RepositoryFactory.Exceptions;
-
-namespace SampleDotnet.RepositoryFactory;
+﻿namespace SampleDotnet.RepositoryFactory;
 
 /// <summary>
 /// Manages transactional operations across multiple repositories and DbContext instances.

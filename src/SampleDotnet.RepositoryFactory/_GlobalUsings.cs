@@ -11,3 +11,5 @@ global using SampleDotnet.RepositoryFactory.Repositories.Implementations;
 global using System.Collections.Concurrent;
 global using System.Linq.Expressions;
 global using System.Runtime.Serialization;
+global using SampleDotnet.RepositoryFactory.Exceptions;
+global using SampleDotnet.RepositoryFactory.Database;
