@@ -5,48 +5,17 @@
 /// Inherits from <see cref="RepositoryBase"/> and implements <see cref="IRepository{TDbContext}"/>.
 /// </summary>
 /// <typeparam name="TDbContext">The type of the _context.</typeparam>
-internal sealed class Repository<TDbContext> : IRepository<TDbContext> where TDbContext : DbContext
+internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> where TDbContext : DbContext
 {
     // The DbContext used by the repository.
-    private readonly DbContext _context;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Repository{TDbContext}"/> class with the specified _context.
     /// </summary>
     /// <param name="dbContext">The DbContext instance.</param>
     internal Repository(TDbContext dbContext)
+        : base(dbContext)
     {
-        _context = dbContext;
-    }
-
-    public ChangeTracker ChangeTracker => _context.ChangeTracker;
-
-    public DatabaseFacade Database => _context.Database;
-
-    public DbContext DbContext => _context;
-
-    public EntityEntry Add(object entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity, nameof(entity));
-        return _context.Add(entity);
-    }
-
-    public ValueTask<EntityEntry> AddAsync(object entity, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(entity, nameof(entity));
-        return _context.AddAsync(entity, cancellationToken);
-    }
-
-    public void AddRange(params object[] entities)
-    {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-        _context.AddRange(entities);
-    }
-
-    public Task AddRangeAsync(IEnumerable<object> entities, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-        return _context.AddRangeAsync(entities, cancellationToken);
     }
 
     /// <summary>
@@ -67,11 +36,6 @@ internal sealed class Repository<TDbContext> : IRepository<TDbContext> where TDb
     public IQueryable<T> AsQueryable<T>() where T : class
     {
         return _context.Set<T>();
-    }
-
-    public void Dispose()
-    {
-        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -143,50 +107,6 @@ internal sealed class Repository<TDbContext> : IRepository<TDbContext> where TDb
     public Task<T?> FirstOrDefaultAsync<T>(CancellationToken cancellationToken = default) where T : class
     {
         return _context.Set<T>().FirstOrDefaultAsync(cancellationToken);
-    }
-
-    /// <summary>
-    /// Deletes the specified entity from the _context.
-    /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="entity">The entity to delete.</param>
-    public EntityEntry Remove(object entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity, nameof(entity));
-        return _context.Remove(entity);
-    }
-
-    /// <summary>
-    /// Deletes the specified entities from the _context.
-    /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="entities">The entities to delete.</param>
-    public void RemoveRange(params object[] entities)
-    {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-        _context.RemoveRange(entities);
-    }
-
-    public DbSet<TEntity> Set<TEntity>() where TEntity : class
-    {
-        return _context.Set<TEntity>();
-    }
-
-    /// <summary>
-    /// Updates a range of entities in the _context.
-    /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="entities">The entities to update.</param>
-    public EntityEntry Update(object entity)
-    {
-        ArgumentNullException.ThrowIfNull(entity, nameof(entity));
-        return _context.Update(entity);
-    }
-
-    public void UpdateRange(params object[] entities)
-    {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-        _context.UpdateRange(entities);
     }
 
     /// <summary>

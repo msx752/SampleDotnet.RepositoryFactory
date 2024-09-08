@@ -5,9 +5,7 @@
 /// </summary>
 public interface IRepository : IDisposable
 {
-    ChangeTracker ChangeTracker { get; }
-    DatabaseFacade Database { get; }
-    DbContext DbContext { get; }
+    DbContext Db { get; }
 
     EntityEntry Add(object entity);
 
@@ -24,6 +22,8 @@ public interface IRepository : IDisposable
     EntityEntry Update(object entity);
 
     void UpdateRange(params object[] entities);
+
+    DbSet<TEntity> Set<TEntity>() where TEntity : class;
 }
 
 /// <summary>
@@ -47,8 +47,6 @@ public interface IRepository<TDbContext> : IRepository where TDbContext : DbCont
     Task<TEntity?> FirstOrDefaultAsync<TEntity>(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default) where TEntity : class;
 
     Task<TEntity?> FirstOrDefaultAsync<TEntity>(CancellationToken cancellationToken = default) where TEntity : class;
-
-    DbSet<TEntity> Set<TEntity>() where TEntity : class;
 
     IQueryable<TEntity> Where<TEntity>(Expression<Func<TEntity, bool>> predicate) where TEntity : class;
 }
