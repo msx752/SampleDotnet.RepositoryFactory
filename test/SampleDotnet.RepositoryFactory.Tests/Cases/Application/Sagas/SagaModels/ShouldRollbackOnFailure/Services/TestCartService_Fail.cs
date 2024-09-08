@@ -24,7 +24,7 @@ public class TestCartService_Fail : ITestCartService
             Status = CartStatus.Pending
         };
 
-        await repo.InsertAsync(cart);
+        await repo.AddAsync(cart);
         throw new Exception("operation halt, CompensateTransactionEvent need to be called");
     }
 

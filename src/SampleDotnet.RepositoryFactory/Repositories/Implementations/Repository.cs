@@ -4,24 +4,59 @@
 /// A generic repository class that provides CRUD operations and additional methods for querying and manipulating entities.
 /// Inherits from <see cref="RepositoryBase"/> and implements <see cref="IRepository{TDbContext}"/>.
 /// </summary>
-/// <typeparam name="TDbContext">The type of the DbContext.</typeparam>
-internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbContext> where TDbContext : DbContext
+/// <typeparam name="TDbContext">The type of the _context.</typeparam>
+internal sealed class Repository<TDbContext> : IRepository<TDbContext> where TDbContext : DbContext
 {
-    // A function to set the CreatedAt property for entities implementing IHasDateTimeOffset.
-    private static readonly Func<object, object> _funcCreatedAt = new((entity) =>
-    {
-        if (entity is IHasDateTimeOffset dt)
-            dt.CreatedAt = DateTimeOffset.Now;
-        return entity;
-    });
+    // The DbContext used by the repository.
+    private readonly DbContext _context;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Repository{TDbContext}"/> class with the specified DbContext.
+    /// Initializes a new instance of the <see cref="Repository{TDbContext}"/> class with the specified _context.
     /// </summary>
     /// <param name="dbContext">The DbContext instance.</param>
     internal Repository(TDbContext dbContext)
-        : base(dbContext)
     {
+        _context = dbContext;
+    }
+
+    public ChangeTracker ChangeTracker => _context.ChangeTracker;
+
+    public DatabaseFacade Database => _context.Database;
+
+    public DbContext DbContext => _context;
+
+    public EntityEntry Add(object entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity, nameof(entity));
+        return _context.Add(entity);
+    }
+
+    public ValueTask<EntityEntry> AddAsync(object entity, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(entity, nameof(entity));
+        return _context.AddAsync(entity, cancellationToken);
+    }
+
+    public void AddRange(params object[] entities)
+    {
+        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
+        _context.AddRange(entities);
+    }
+
+    public Task AddRangeAsync(IEnumerable<object> entities, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
+        return _context.AddRangeAsync(entities, cancellationToken);
+    }
+
+    /// <summary>
+    /// Returns an <see cref="IQueryable{T}"/> of the specified entity type.
+    /// </summary>
+    /// <typeparam name="T">The entity type.</typeparam>
+    /// <returns>An IQueryable of the specified entity type.</returns>
+    public IQueryable<T> AsNoTracking<T>() where T : class
+    {
+        return _context.Set<T>().AsNoTracking();
     }
 
     /// <summary>
@@ -31,49 +66,12 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     /// <returns>An IQueryable of the specified entity type.</returns>
     public IQueryable<T> AsQueryable<T>() where T : class
     {
-        return DbContext.Set<T>();
+        return _context.Set<T>();
     }
 
-    /// <summary>
-    /// Returns an <see cref="IQueryable{T}"/> of the specified entity type.
-    /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
-    /// <returns>An IQueryable of the specified entity type.</returns>
-    public IQueryable<T> AsQueryableWithNoTracking<T>() where T : class
+    public void Dispose()
     {
-        return DbContext.Set<T>().AsNoTracking();
-    }
-
-    /// <summary>
-    /// Deletes the specified entity from the DbContext.
-    /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="entity">The entity to delete.</param>
-    public void Delete<T>(T entity) where T : class
-    {
-        base.Delete(entity);
-    }
-
-    /// <summary>
-    /// Deletes the specified entities from the DbContext.
-    /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="entities">The entities to delete.</param>
-    public void Delete<T>(params T[] entities) where T : class
-    {
-        base.DeleteRange(entities);
-    }
-
-    /// <summary>
-    /// Deletes the specified entities from the DbContext.
-    /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="entities">The entities to delete.</param>
-    public void Delete<T>(IEnumerable<T> entities) where T : class
-    {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-
-        DbContext.RemoveRange(entities);
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -85,8 +83,7 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     public T? Find<T>(params object[] keyValues) where T : class
     {
         ArgumentNullException.ThrowIfNull(keyValues, nameof(keyValues));
-
-        return DbContext.Set<T>().Find(keyValues);
+        return _context.Set<T>().Find(keyValues);
     }
 
     /// <summary>
@@ -99,8 +96,7 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     public ValueTask<T?> FindAsync<T>(object[] keyValues, CancellationToken cancellationToken = default) where T : class
     {
         ArgumentNullException.ThrowIfNull(keyValues, nameof(keyValues));
-
-        return DbContext.Set<T>().FindAsync(keyValues, cancellationToken);
+        return _context.Set<T>().FindAsync(keyValues, cancellationToken);
     }
 
     /// <summary>
@@ -112,8 +108,7 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     public T? FirstOrDefault<T>(Expression<Func<T, bool>> predicate) where T : class
     {
         ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
-
-        return DbContext.Set<T>().FirstOrDefault(predicate);
+        return _context.Set<T>().FirstOrDefault(predicate);
     }
 
     /// <summary>
@@ -123,7 +118,7 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     /// <returns>The first entity in the sequence, or null.</returns>
     public T? FirstOrDefault<T>() where T : class
     {
-        return DbContext.Set<T>().FirstOrDefault();
+        return _context.Set<T>().FirstOrDefault();
     }
 
     /// <summary>
@@ -136,8 +131,7 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     public Task<T?> FirstOrDefaultAsync<T>(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default) where T : class
     {
         ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
-
-        return DbContext.Set<T>().FirstOrDefaultAsync(predicate, cancellationToken);
+        return _context.Set<T>().FirstOrDefaultAsync(predicate, cancellationToken);
     }
 
     /// <summary>
@@ -148,154 +142,62 @@ internal sealed class Repository<TDbContext> : RepositoryBase, IRepository<TDbCo
     /// <returns>A task representing the asynchronous operation, with the first entity in the sequence, or null.</returns>
     public Task<T?> FirstOrDefaultAsync<T>(CancellationToken cancellationToken = default) where T : class
     {
-        return DbContext.Set<T>().FirstOrDefaultAsync(cancellationToken);
+        return _context.Set<T>().FirstOrDefaultAsync(cancellationToken);
     }
 
     /// <summary>
-    /// Finds an entity by its ID.
+    /// Deletes the specified entity from the _context.
     /// </summary>
     /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="id">The ID of the entity.</param>
-    /// <returns>The entity found, or null.</returns>
-    public T? GetById<T>(object id) where T : class
-    {
-        return Find<T>(id);
-    }
-
-    /// <summary>
-    /// Asynchronously finds an entity by its ID.
-    /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="id">The ID of the entity.</param>
-    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
-    /// <returns>A task representing the asynchronous operation, with the entity found, or null.</returns>
-    public ValueTask<T?> GetByIdAsync<T>(object id, CancellationToken cancellationToken = default) where T : class
-    {
-        return FindAsync<T>(new object[] { id }, cancellationToken);
-    }
-
-    /// <summary>
-    /// Inserts a new entity into the DbContext.
-    /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="entity">The entity to insert.</param>
-    public void Insert<T>(T entity) where T : class
+    /// <param name="entity">The entity to delete.</param>
+    public EntityEntry Remove(object entity)
     {
         ArgumentNullException.ThrowIfNull(entity, nameof(entity));
-
-        DbContext.Set<T>().Add((T)_funcCreatedAt(entity));
-    }
-
-    public void Add<T>(T entity) where T : class
-    {
-        ArgumentNullException.ThrowIfNull(entity, nameof(entity));
-
-        DbContext.Set<T>().Add((T)_funcCreatedAt(entity));
+        return _context.Remove(entity);
     }
 
     /// <summary>
-    /// Inserts a range of entities into the DbContext.
+    /// Deletes the specified entities from the _context.
     /// </summary>
     /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="entities">The entities to insert.</param>
-    public void Insert<T>(params T[] entities) where T : class
+    /// <param name="entities">The entities to delete.</param>
+    public void RemoveRange(params object[] entities)
     {
         ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-
-        DbContext.AddRange(entities.Select(f => (T)_funcCreatedAt(f)));
+        _context.RemoveRange(entities);
     }
 
-    public void AddRange<T>(IEnumerable<T> entities) where T : class
+    public DbSet<TEntity> Set<TEntity>() where TEntity : class
     {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-
-        DbContext.AddRange(entities.Select(f => (T)_funcCreatedAt(f)));
+        return _context.Set<TEntity>();
     }
 
     /// <summary>
-    /// Inserts a range of entities into the DbContext.
-    /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="entities">The entities to insert.</param>
-    public void Insert<T>(IEnumerable<T> entities) where T : class
-    {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-
-        DbContext.AddRange(entities.Select(f => (T)_funcCreatedAt(f)));
-    }
-
-    /// <summary>
-    /// Asynchronously inserts a new entity into the DbContext.
-    /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="entity">The entity to insert.</param>
-    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public ValueTask<EntityEntry<T>> InsertAsync<T>(T entity, CancellationToken cancellationToken = default) where T : class
-    {
-        ArgumentNullException.ThrowIfNull(entity, nameof(entity));
-
-        return DbContext.AddAsync((T)_funcCreatedAt(entity), cancellationToken);
-    }
-
-    /// <summary>
-    /// Asynchronously inserts a range of entities into the DbContext.
-    /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="entities">The entities to insert.</param>
-    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public Task InsertAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T : class
-    {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-
-        return DbContext.AddRangeAsync(entities.Select(f => (T)_funcCreatedAt(f)), cancellationToken);
-    }
-
-    /// <summary>
-    /// Asynchronously inserts a range of entities into the DbContext.
-    /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="entities">The entities to insert.</param>
-    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public Task InsertAsync<T>(IEnumerable<T> entities, CancellationToken cancellationToken = default) where T : class
-    {
-        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
-
-        return DbContext.AddRangeAsync(entities.Select(f => (T)_funcCreatedAt(f)), cancellationToken);
-    }
-
-    /// <summary>
-    /// Updates a range of entities in the DbContext.
+    /// Updates a range of entities in the _context.
     /// </summary>
     /// <typeparam name="T">The entity type.</typeparam>
     /// <param name="entities">The entities to update.</param>
-    public void Update<T>(params T[] entities) where T : class
+    public EntityEntry Update(object entity)
     {
-        base.UpdateRange(entities);
+        ArgumentNullException.ThrowIfNull(entity, nameof(entity));
+        return _context.Update(entity);
     }
 
-    /// <summary>
-    /// Updates a range of entities in the DbContext.
-    /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
-    /// <param name="entities">The entities to update.</param>
-    public void Update<T>(IEnumerable<T> entities) where T : class
+    public void UpdateRange(params object[] entities)
     {
-        base.UpdateRange(entities);
+        ArgumentNullException.ThrowIfNull(entities, nameof(entities));
+        _context.UpdateRange(entities);
     }
 
     /// <summary>
     /// Returns an <see cref="IQueryable{T}"/> that contains elements from the input sequence that satisfy the specified predicate.
     /// </summary>
-    /// <typeparam name="T">The entity type.</typeparam>
+    /// <typeparam name="TEntity">The entity type.</typeparam>
     /// <param name="predicate">A function to test each element for a condition.</param>
     /// <returns>An IQueryable that contains elements from the input sequence that satisfy the condition specified by predicate.</returns>
-    public IQueryable<T> Where<T>(Expression<Func<T, bool>> predicate) where T : class
+    public IQueryable<TEntity> Where<TEntity>(Expression<Func<TEntity, bool>> predicate) where TEntity : class
     {
         ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
-
-        return DbContext.Set<T>().Where(predicate);
+        return _context.Set<TEntity>().Where(predicate);
     }
 }

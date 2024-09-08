@@ -225,7 +225,7 @@ public class TestCartService_Success : ITestCartService
         // Simulate reserving items in the cart
         foreach (var item in items)
         {
-            repo.Insert<TestCartEntity>(new TestCartEntity
+            repo.Add(new TestCartEntity
             {
                 ProductId = item.ProductId,
                 Quantity = item.Quantity,

@@ -2,7 +2,7 @@
 
 // Represents an entity in the second database context.
 [Table("SecondDbEntity")]
-internal class SecondDbEntity : IHasDateTimeOffset
+internal class SecondDbEntity
 {
     public DateTimeOffset? CreatedAt { get; set; }
 

@@ -37,6 +37,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Repositories\Base\**" />
+	  <EmbeddedResource Remove="Repositories\Base\**" />
+	  <None Remove="Repositories\Base\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<None Include="..\..\LICENSE">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>

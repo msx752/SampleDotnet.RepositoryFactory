@@ -24,7 +24,7 @@ public class TestPaymentService : ITestPaymentService
             Status = PaymentStatus.Pending
         };
 
-        await repo.InsertAsync(payment);
+        await repo.AddAsync(payment);
         await _unitOfWork.SaveChangesAsync();
 
         payment.Status = PaymentStatus.Completed;

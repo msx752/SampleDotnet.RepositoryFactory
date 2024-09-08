@@ -37,10 +37,10 @@
                     {
                         Name = "Name",
                         Surname = "Surname",
+                        CreatedAt = DateTime.Now,
                     };
 
-                    user1.CreatedAt.ShouldBeNull();
-                    await repository.InsertAsync(user1);
+                    await repository.AddAsync(user1);
 
                     await unitOfWork.SaveChangesAsync();
 
@@ -48,6 +48,7 @@
                     user1.UpdatedAt.ShouldBeNull();
 
                     user1.Name = "Name1";
+                    user1.UpdatedAt = DateTime.Now;
                     repository.Update(user1);
 
                     await unitOfWork.SaveChangesAsync();
@@ -83,10 +84,10 @@
                         {
                             Name = "Name000",
                             Surname = "Surname",
+                            CreatedAt = DateTime.Now,
                         };
 
-                        user1.CreatedAt.ShouldBeNull();
-                        await repository.InsertAsync(user1);
+                        await repository.AddAsync(user1);
 
                         await unitOfWork.SaveChangesAsync();
                         await unitOfWork.SaveChangesAsync();
@@ -110,15 +111,17 @@
                                 {
                                     Name = $"Name",
                                     Surname = "Surname",
+                                    CreatedAt = DateTime.Now,
                                 };
 
-                                await repository.InsertAsync(user);
+                                await repository.AddAsync(user);
 
                                 await unitOfWork.SaveChangesAsync();
 
                                 repository.Update(user);
 
                                 user.Name = $"Name{val.ToString("000")}";
+                                user.UpdatedAt = DateTime.Now;
 
                                 await unitOfWork.SaveChangesAsync();
                             }
@@ -162,7 +165,7 @@
                              using (var repository = unitOfWork.CreateRepository<TestDisposeDbContext>())
                              {
                                  var user = entities[i];
-                                 repository.Delete(user);
+                                 repository.Remove(user);
 
                                  await unitOfWork.SaveChangesAsync();
                              }

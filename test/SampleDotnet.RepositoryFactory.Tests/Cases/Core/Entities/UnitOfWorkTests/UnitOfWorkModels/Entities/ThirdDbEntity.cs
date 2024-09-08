@@ -1,7 +1,7 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Core.Entities.UnitOfWorkTests.UnitOfWorkModels.Entities;
 
 [Table("ThirdDbEntity")]
-internal class ThirdDbEntity : IHasDateTimeOffset
+internal class ThirdDbEntity
 {
     /// <summary>
     /// SELF NOTE: Use GUID for the PrimaryKey and SecondaryKey to be able to fix ID Conflict Exceptions when commiting the changes

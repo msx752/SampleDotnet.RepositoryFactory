@@ -24,7 +24,7 @@ public class TestCartService_Success : ITestCartService
             Status = CartStatus.Pending
         };
 
-        await repo.InsertAsync(cart);
+        await repo.AddAsync(cart);
         await _unitOfWork.SaveChangesAsync();
 
         cart.Status = CartStatus.Completed;

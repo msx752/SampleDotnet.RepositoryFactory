@@ -1,7 +1,7 @@
 ﻿namespace SampleDotnet.RepositoryFactory.Tests.Cases.Infrastructure.DbContexts.DbContextModels.Entities
 {
     [Table("TestUserEntity")]
-    public class TestDisposeEntity : IHasDateTimeOffset
+    public class TestDisposeEntity
     {
         /// <summary>
         /// SELF NOTE: Use GUID for the PrimaryKey and SecondaryKey to be able to fix ID Conflict Exceptions when commiting the changes

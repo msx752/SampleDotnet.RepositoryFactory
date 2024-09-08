@@ -51,11 +51,9 @@ public class UnitOfWorkTests
                         FirstDbEntity entity = new();  // Create a new entity for FirstDbContext.
                         entity.ProductName = "Product1";  // Set the product name.
                         entity.Price = 10.5M;  // Set the price.
+                        entity.CreatedAt = DateTime.Now;
 
-                        entity.CreatedAt.ShouldBeNull();  // Ensure CreatedAt is null before insert.
-                        entity.UpdatedAt.ShouldBeNull();  // Ensure UpdatedAt is null before insert.
-
-                        await repo.InsertAsync(entity, cancellationTokenSource.Token);  // Insert the entity asynchronously.
+                        await repo.AddAsync(entity, cancellationTokenSource.Token);  // Insert the entity asynchronously.
 
                         entity.CreatedAt.ShouldNotBeNull();  // CreatedAt should be set after insert.
                         entity.UpdatedAt.ShouldBeNull();  // UpdatedAt should still be null after insert.
@@ -68,11 +66,9 @@ public class UnitOfWorkTests
                     {
                         SecondDbEntity entity = new();  // Create a new entity for SecondDbContext.
                         entity.CustomerName = "Customer1";  // Set the customer name.
+                        entity.CreatedAt = DateTime.Now;
 
-                        entity.CreatedAt.ShouldBeNull();  // Ensure CreatedAt is null before insert.
-                        entity.UpdatedAt.ShouldBeNull();  // Ensure UpdatedAt is null before insert.
-
-                        await repo.InsertAsync(entity, cancellationTokenSource.Token);  // Insert the entity asynchronously.
+                        await repo.AddAsync(entity, cancellationTokenSource.Token);  // Insert the entity asynchronously.
 
                         entity.CreatedAt.ShouldNotBeNull();  // CreatedAt should be set after insert.
                         entity.UpdatedAt.ShouldBeNull();  // UpdatedAt should still be null after insert.
@@ -91,6 +87,7 @@ public class UnitOfWorkTests
                         entity.ShouldNotBeNull();  // Ensure the entity is found.
 
                         entity.ProductName = "Product1Updated";  // Update the product name.
+                        entity.UpdatedAt = DateTime.Now;
 
                         repo.Update(entity);  // Update the entity in the repository.
 
@@ -105,11 +102,9 @@ public class UnitOfWorkTests
                     {
                         SecondDbEntity entity = new();  // Create a new entity for SecondDbContext.
                         entity.CustomerName = null;  // Set CustomerName to null, which is invalid.
+                        entity.CreatedAt = DateTime.Now;
 
-                        entity.CreatedAt.ShouldBeNull();  // Ensure CreatedAt is null before insert.
-                        entity.UpdatedAt.ShouldBeNull();  // Ensure UpdatedAt is null before insert.
-
-                        await repo.InsertAsync(entity, cancellationTokenSource.Token);  // Insert the entity asynchronously.
+                        await repo.AddAsync(entity, cancellationTokenSource.Token);  // Insert the entity asynchronously.
 
                         entity.CreatedAt.ShouldNotBeNull();  // CreatedAt should be set after insert.
                         entity.UpdatedAt.ShouldBeNull();  // UpdatedAt should still be null after insert.
@@ -123,7 +118,7 @@ public class UnitOfWorkTests
                         var entity = await repo.FirstOrDefaultAsync<SecondDbEntity>(f => f.CustomerName == "Customer1");  // Fetch the entity.
                         entity.ShouldNotBeNull();  // Ensure the entity is found.
 
-                        repo.Delete(entity);  // Delete the entity from the repository.
+                        repo.Remove(entity);  // Delete the entity from the repository.
                     }
                 }
 
@@ -210,10 +205,10 @@ public class UnitOfWorkTests
                     {
                         Name = "Name",  // Set initial name.
                         Surname = "Surname",  // Set initial surname.
+                        CreatedAt = DateTime.Now,
                     };
 
-                    user1.CreatedAt.ShouldBeNull();  // Ensure CreatedAt is null before insert.
-                    await repository.InsertAsync(user1);  // Insert the entity asynchronously.
+                    await repository.AddAsync(user1);  // Insert the entity asynchronously.
 
                     await unitOfWork.SaveChangesAsync();  // Save changes to the database.
                 }
@@ -229,6 +224,7 @@ public class UnitOfWorkTests
                     await unitOfWork.SaveChangesAsync();  // Save changes to the database (no changes, but ensure no errors).
 
                     user1.Name = "NameUpdated2";  // Update the entity's name.
+                    user1.UpdatedAt = DateTime.Now;
 
                     await unitOfWork.SaveChangesAsync();  // Save changes again to update the entity in the database.
 
@@ -275,11 +271,9 @@ public class UnitOfWorkTests
                         ThirdDbEntity entity = new();  // Create a new entity.
                         entity.Name = "TestName";  // Set entity name.
                         entity.Surname = "TestSurname";  // Set entity surname.
+                        entity.CreatedAt= DateTime.Now;
 
-                        entity.CreatedAt.ShouldBeNull();  // Ensure CreatedAt is null before insert.
-                        entity.UpdatedAt.ShouldBeNull();  // Ensure UpdatedAt is null before insert.
-
-                        await repo.InsertAsync(entity, cancellationTokenSource.Token);  // Insert entity asynchronously.
+                        await repo.AddAsync(entity, cancellationTokenSource.Token);  // Insert entity asynchronously.
 
                         entity.CreatedAt.ShouldNotBeNull();  // CreatedAt should be set after insert.
                         entity.UpdatedAt.ShouldBeNull();  // UpdatedAt should still be null after insert.
@@ -306,6 +300,7 @@ public class UnitOfWorkTests
                         entity.ShouldBeNull();  // Entity should not be found in this context.
 
                         createdEntityFromFirstInstance.Name = null;  // Set name to null, which is invalid.
+                        createdEntityFromFirstInstance.UpdatedAt= DateTime.Now;
 
                         repo.Update(createdEntityFromFirstInstance);  // Update entity with invalid data.
 
@@ -377,11 +372,9 @@ public class UnitOfWorkTests
                         FirstDbEntity entity = new();  // Create a new entity for FirstDbContext.
                         entity.ProductName = "Product1";  // Set the product name.
                         entity.Price = 10.5M;  // Set the price.
+                        entity.CreatedAt= DateTime.Now;
 
-                        entity.CreatedAt.ShouldBeNull();  // Ensure CreatedAt is null before insert.
-                        entity.UpdatedAt.ShouldBeNull();  // Ensure UpdatedAt is null before insert.
-
-                        await repo.InsertAsync(entity, cancellationTokenSource.Token);  // Insert the entity asynchronously.
+                        await repo.AddAsync(entity, cancellationTokenSource.Token);  // Insert the entity asynchronously.
 
                         entity.CreatedAt.ShouldNotBeNull();  // CreatedAt should be set after insert.
                         entity.UpdatedAt.ShouldBeNull();  // UpdatedAt should still be null after insert.
@@ -394,11 +387,9 @@ public class UnitOfWorkTests
                     {
                         SecondDbEntity entity = new();  // Create a new entity for SecondDbContext.
                         entity.CustomerName = null;  // Set CustomerName to null, which is invalid.
+                        entity.CreatedAt = DateTime.Now;
 
-                        entity.CreatedAt.ShouldBeNull();  // Ensure CreatedAt is null before insert.
-                        entity.UpdatedAt.ShouldBeNull();  // Ensure UpdatedAt is null before insert.
-
-                        await repo.InsertAsync(entity, cancellationTokenSource.Token);  // Insert the entity asynchronously.
+                        await repo.AddAsync(entity, cancellationTokenSource.Token);  // Insert the entity asynchronously.
 
                         entity.CreatedAt.ShouldNotBeNull();  // CreatedAt should be set after insert.
                         entity.UpdatedAt.ShouldBeNull();  // UpdatedAt should still be null after insert.
@@ -497,13 +488,13 @@ public class UnitOfWorkTests
                     using (IRepository<FirstDbContext> repo = unitOfWork.CreateRepository<FirstDbContext>())
                     {
                         var entity = new FirstDbEntity { ProductName = "ValidProduct", Price = 100M };
-                        await repo.InsertAsync(entity, cancellationTokenSource.Token);
+                        await repo.AddAsync(entity, cancellationTokenSource.Token);
                     }
 
                     using (IRepository<SecondDbContext> repo = unitOfWork.CreateRepository<SecondDbContext>())
                     {
                         var entity = new SecondDbEntity { CustomerName = "ValidCustomer" };
-                        await repo.InsertAsync(entity, cancellationTokenSource.Token);
+                        await repo.AddAsync(entity, cancellationTokenSource.Token);
                     }
 
                     await unitOfWork.SaveChangesAsync(cancellationTokenSource.Token);  // Commit to create a save point.
@@ -514,13 +505,13 @@ public class UnitOfWorkTests
                     using (IRepository<FirstDbContext> repo = unitOfWork.CreateRepository<FirstDbContext>())
                     {
                         var entity = new FirstDbEntity { ProductName = null, Price = 50M };  // Invalid entity.
-                        await repo.InsertAsync(entity, cancellationTokenSource.Token);
+                        await repo.AddAsync(entity, cancellationTokenSource.Token);
                     }
 
                     using (IRepository<SecondDbContext> repo = unitOfWork.CreateRepository<SecondDbContext>())
                     {
                         var entity = new SecondDbEntity { CustomerName = null };  // Invalid entity.
-                        await repo.InsertAsync(entity, cancellationTokenSource.Token);
+                        await repo.AddAsync(entity, cancellationTokenSource.Token);
                     }
 
                     // This should throw due to invalid entities.
@@ -600,16 +591,16 @@ public class UnitOfWorkTests
                     using (IRepository<FirstDbContext> repo = unitOfWork.CreateRepository<FirstDbContext>())
                     {
                         var validEntity1 = new FirstDbEntity { ProductName = "ValidProduct1", Price = 100M };
-                        await repo.InsertAsync(validEntity1, cancellationTokenSource.Token);  // Insert valid entity.
+                        await repo.AddAsync(validEntity1, cancellationTokenSource.Token);  // Insert valid entity.
 
                         var invalidEntity = new FirstDbEntity { ProductName = null, Price = 50M };  // Invalid entity.
-                        await repo.InsertAsync(invalidEntity, cancellationTokenSource.Token);  // Insert invalid entity.
+                        await repo.AddAsync(invalidEntity, cancellationTokenSource.Token);  // Insert invalid entity.
                     }
 
                     using (IRepository<SecondDbContext> repo = unitOfWork.CreateRepository<SecondDbContext>())
                     {
                         var validEntity2 = new SecondDbEntity { CustomerName = "ValidCustomer2" };
-                        await repo.InsertAsync(validEntity2, cancellationTokenSource.Token);  // Insert valid entity.
+                        await repo.AddAsync(validEntity2, cancellationTokenSource.Token);  // Insert valid entity.
                     }
                 }
 
@@ -671,7 +662,7 @@ public class UnitOfWorkTests
                 using (IRepository<ThirdDbContext> repo = unitOfWork.CreateRepository<ThirdDbContext>())
                 {
                     var entity1 = new ThirdDbEntity { Name = "User1", Surname = "Surname1" };
-                    await repo.InsertAsync(entity1, cancellationTokenSource.Token);
+                    await repo.AddAsync(entity1, cancellationTokenSource.Token);
                     var commitSuccess1 = await unitOfWork.SaveChangesAsync(cancellationTokenSource.Token);  // Commit the transaction.
                     commitSuccess1.ShouldBeTrue();  // Ensure the commit was successful.
                 }
@@ -680,7 +671,7 @@ public class UnitOfWorkTests
                 using (IRepository<ThirdDbContext> repo = unitOfWork.CreateRepository<ThirdDbContext>())
                 {
                     var entity2 = new ThirdDbEntity { Name = "User2", Surname = "Surname2" };
-                    await repo.InsertAsync(entity2, cancellationTokenSource.Token);
+                    await repo.AddAsync(entity2, cancellationTokenSource.Token);
 
                     var savePointSuccess = await unitOfWork.SaveChangesAsync(cancellationTokenSource.Token);  // Commit changes to create a save point.
                     savePointSuccess.ShouldBeTrue();  // Ensure the save point was committed successfully.
@@ -692,7 +683,7 @@ public class UnitOfWorkTests
                     using (IRepository<ThirdDbContext> repo = unitOfWork.CreateRepository<ThirdDbContext>())
                     {
                         var entity3 = new ThirdDbEntity { Name = null, Surname = "Surname3" };  // Invalid entity.
-                        await repo.InsertAsync(entity3, cancellationTokenSource.Token);
+                        await repo.AddAsync(entity3, cancellationTokenSource.Token);
 
                         await unitOfWork.SaveChangesAsync(cancellationTokenSource.Token);  // Attempt to save changes.
                     }
