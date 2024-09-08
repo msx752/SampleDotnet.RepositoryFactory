@@ -9,7 +9,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{163596FF-95D
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{5096EE52-D2B3-4173-A90A-5432310F47EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleDotnet.RepositoryFactory.Tests", "test\SampleDotnet.RepositoryFactory.Tests\SampleDotnet.RepositoryFactory.Tests.csproj", "{CBF9A238-6E47-4BD5-9E21-A597CC3C011C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleDotnet.RepositoryFactory.Tests", "test\SampleDotnet.RepositoryFactory.Tests\SampleDotnet.RepositoryFactory.Tests.csproj", "{CBF9A238-6E47-4BD5-9E21-A597CC3C011C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FA256C6C-8F06-4D44-9D65-44223F437342}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

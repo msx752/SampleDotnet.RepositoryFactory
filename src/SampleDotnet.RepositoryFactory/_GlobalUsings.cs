@@ -2,8 +2,6 @@
 global using Microsoft.EntityFrameworkCore.ChangeTracking;
 global using Microsoft.EntityFrameworkCore.Infrastructure;
 global using Microsoft.Extensions.DependencyInjection;
-global using SampleDotnet.RepositoryFactory.Entities.Database;
-global using SampleDotnet.RepositoryFactory.Entities.Exceptions;
 global using SampleDotnet.RepositoryFactory.Interfaces;
 global using SampleDotnet.RepositoryFactory.Interfaces.Core;
 global using SampleDotnet.RepositoryFactory.Interfaces.Repositories;

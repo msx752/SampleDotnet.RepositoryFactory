@@ -1,4 +1,4 @@
-﻿namespace SampleDotnet.RepositoryFactory.Entities.Exceptions;
+﻿namespace SampleDotnet.RepositoryFactory.Exceptions;
 
 /// <summary>
 /// Represents detailed information about an exception that occurred during a SaveChanges operation.

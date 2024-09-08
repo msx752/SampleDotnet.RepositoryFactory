@@ -1,4 +1,6 @@
-﻿namespace SampleDotnet.RepositoryFactory;
+﻿using SampleDotnet.RepositoryFactory.Exceptions;
+
+namespace SampleDotnet.RepositoryFactory.Database;
 
 /// <summary>
 /// Manages transactions across multiple DbContext instances, ensuring consistency and providing rollback functionality.

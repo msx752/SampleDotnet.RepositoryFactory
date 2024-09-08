@@ -1,4 +1,6 @@
-﻿namespace SampleDotnet.RepositoryFactory;
+﻿using SampleDotnet.RepositoryFactory.Database;
+
+namespace SampleDotnet.RepositoryFactory;
 
 /// <summary>
 /// Extension methods for adding DbContext factory and UnitOfWork to the service collection.

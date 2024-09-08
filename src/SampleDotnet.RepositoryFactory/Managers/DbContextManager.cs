@@ -1,4 +1,4 @@
-﻿namespace SampleDotnet.RepositoryFactory.Entities.Database;
+﻿namespace SampleDotnet.RepositoryFactory.Database;
 
 /// <summary>
 /// Manages the lifecycle of DbContext instances, including creation and disposal.
